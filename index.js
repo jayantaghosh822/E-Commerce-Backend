@@ -14,11 +14,11 @@ class Server {
         this.app.use(express.json());
         this.port = 5000;
         this.databaseURI = process.env.MONGODB_URI;
-        // this.app.use((req, res, next) => {
-        //     if (!req.headers.origin) {
-        //         return res.status(403).json({ message: "Forbidden: API access restricted." });
-        //     }
-        // });
+        this.app.use((req, res, next) => {
+            if (!req.headers.origin) {
+                return res.status(403).json({ message: "Forbidden: API access restricted." });
+            }
+        });
         this.app.use(cors(corsOptions));
         this.connectDB();
         // this.middlewares();
