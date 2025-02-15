@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
 const userModel = require('../models/userModel.js');
-
+const user = userModel.User;
 dotenv.config();
 
 class UserController {
@@ -13,10 +13,10 @@ class UserController {
     }
 
     // User Registration Method
-    async register(req, res) {
+    async userRegister(req, res) {
         try {
             // console.log(req.body);
-            const existing_user = await this.User.findOne({ email: req.body.email });
+            const existing_user = await user.findOne({ email: req.body.email });
             console.log(existing_user);
 
             const { firstname, lastname, email, password, phone } = req.body;
@@ -53,6 +53,48 @@ class UserController {
             });
         }
     }
+    async userLogin(req, res){
+        const user_email = req.body.email;
+        const user_pass = req.body.pass;
+      
+        try { 
+            // Check if the user exists
+            const my_user = await user.findOne({ email: user_email });
+      
+            if (my_user) { 
+                // Check if password matches
+                const result = user_pass === my_user.password;
+      
+                if (result) { 
+                    try {
+                        const token = JWT.sign({ _id: my_user._id }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+      
+                        res.status(200).send({
+                            success: true,
+                            message: "User logged in",
+                            user: {
+                                name: my_user.displayname || 'N/A', // Provide default values if fields are undefined
+                                email: my_user.email || 'N/A',
+                                id: my_user._id,
+                                token: token,
+                            },
+                        });
+                    } catch (error) {
+                        console.error("Token generation error:", error);
+                        res.status(500).json({ success: false, error: "Internal server error" });
+                    }
+                } else { 
+                    res.status(401).json({ success: false, error: "Password doesn't match" }); 
+                } 
+            } else { 
+                res.status(404).json({ success: false, error: "User doesn't exist" }); 
+            } 
+        } catch (error) { 
+            console.error("Database query error:", error);
+            res.status(500).json({ success: false, error: "Internal server error" }); 
+        } 
+      };
+
 }
 
 module.exports =  UserController;

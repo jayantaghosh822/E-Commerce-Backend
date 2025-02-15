@@ -84,11 +84,13 @@ class UserRoutes{
     constructor(){
         this.router = express.Router();
         this.userController = new UserController(); // ✅ Create an instance
-        this.userRegisterController = (req, res) => this.userController.register(req, res);
+        this.userRegisterController = (req, res) => this.userController.userRegister(req, res);
+        this.userLoginController = (req, res) => this.userController.userLogin(req, res);
         this.createRoutes();
     }
     createRoutes(){
         this.router.post('/register', this.userRegisterController);
+        this.router.post('/login', this.userLoginController);
     }
     getRoutes(){
         return this.router;
