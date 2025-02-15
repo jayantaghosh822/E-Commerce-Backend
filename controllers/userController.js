@@ -16,12 +16,18 @@ class UserController {
     async userRegister(req, res) {
         try {
             // console.log(req.body);
+            const { firstname, lastname , displayname, email, password, phone } = req.body;
+            if(firstname == '' || lastname == '' || email == '' || password == '' || phone == ''){
+                return res.status(400).json({
+                    success: false,
+                    message: "Either of the fields is empty",
+                });
+            }
             const existing_user = await user.findOne({ email: req.body.email });
-            console.log(existing_user);
+            // console.log(existing_user);
 
-            const { firstname, lastname, email, password, phone } = req.body;
+            
             const role = 2;
-            const displayname = firstname;
 
             if (!existing_user) {
                 const newUser = await new this.User({
