@@ -64,5 +64,5 @@ class Server {
 }
 // app.listen(5000);
 // Initialize the server
-console.log('jhgj');
+// console.log('jhgj');
 const serverStart = new Server();
