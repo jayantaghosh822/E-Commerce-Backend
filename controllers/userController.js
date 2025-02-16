@@ -208,7 +208,7 @@ class UserController {
             });
 
             if(req.body.token){
-                console.log("gere");
+                // console.log("gere");
                 if (!find_token) return res.status(401).send({
                     success:false,
                     message:'Token Expired'

@@ -99,8 +99,8 @@ class UserRoutes{
         this.router.post('/register', this.userRegisterController);
         this.router.post('/login', this.userLoginController);
         this.router.get('/user-by-id/:ID', this.requireAuthCheck, this.userByIdController);
-        this.router.get('/verify-email', this.verifyEmail);
-        this.router.get('/reset-password-by-email', this.resetPassByEmail);
+        this.router.post('/verify-email', this.verifyEmail);
+        this.router.post('/reset-password-by-email', this.resetPassByEmail);
     }
     getRoutes(){
         return this.router;
