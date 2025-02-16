@@ -214,10 +214,10 @@ class UserController {
                     message:'Token Expired'
                 });
             }
-            // if (!find_token) return res.status(401).send({
-            //     success:false,
-            //     message:'Empty Token'
-            // });
+            if (!find_token) return res.status(401).send({
+                success:false,
+                message:'Empty Token'
+            });
     
             userX.password = req.body.password;
             await userX.save();
