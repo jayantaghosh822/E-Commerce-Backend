@@ -4,7 +4,7 @@ const JWT = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const tokenModel = require("../models/tokenModel.js");
 const token = tokenModel.Token;
-const token_middleware = require ('../middlewares/authMiddleware.js');
+const authMiddleware = require ('../middlewares/authMiddleware.js');
 const UserController = require('../controllers/userController.js');
 // const Joi = require("joi");
 
@@ -80,17 +80,27 @@ const UserController = require('../controllers/userController.js');
 // module.exports = {router};
 // const userController = require('../controllers/userController.js');
 // const userRegisterController = (req, res) => userController.register(req, res);
+
+
 class UserRoutes{
     constructor(){
         this.router = express.Router();
         this.userController = new UserController(); // ✅ Create an instance
         this.userRegisterController = (req, res) => this.userController.userRegister(req, res);
         this.userLoginController = (req, res) => this.userController.userLogin(req, res);
+        this.userByIdController = (req, res) => this.userController.getUserById(req, res);
+        this.verifyEmail = (req,res) => this.userController.verify_email(req, res);
+        this.resetPassByEmail = (req,res) => this.userController.resetPasswordByEmail(req, res);
+        this.authsCheck = new authMiddleware();
+        this.requireAuthCheck = (req,res,next) => this.authsCheck.requireSignIn(req, res , next);
         this.createRoutes();
     }
     createRoutes(){
         this.router.post('/register', this.userRegisterController);
         this.router.post('/login', this.userLoginController);
+        this.router.get('/user-by-id/:ID', this.requireAuthCheck, this.userByIdController);
+        this.router.get('/verify-email', this.verifyEmail);
+        this.router.get('/reset-password-by-email', this.resetPassByEmail);
     }
     getRoutes(){
         return this.router;

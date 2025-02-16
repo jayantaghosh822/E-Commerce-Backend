@@ -3,13 +3,14 @@ const dotenv = require('dotenv');
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
 const userModel = require('../models/userModel.js');
-const user = userModel.User;
+const tokenModel = require("../models/tokenModel.js");
 dotenv.config();
 
 class UserController {
     constructor() {
-        this.User = userModel.User; // Assigning the user model
+        this.user = userModel.User; // Assigning the user model
         // this.register = this.register.bind(this);
+        this.token = tokenModel.Token;
     }
 
     // User Registration Method
@@ -23,14 +24,14 @@ class UserController {
                     message: "Either of the fields is empty",
                 });
             }
-            const existing_user = await user.findOne({ email: req.body.email });
+            const existing_user = await this.user.findOne({ email: req.body.email });
             // console.log(existing_user);
 
             
             const role = 2;
 
             if (!existing_user) {
-                const newUser = await new this.User({
+                const newUser = await new this.user({
                     firstname,
                     lastname,
                     email,
@@ -65,7 +66,7 @@ class UserController {
       
         try { 
             // Check if the user exists
-            const my_user = await user.findOne({ email: user_email });
+            const my_user = await this.user.findOne({ email: user_email });
       
             if (my_user) { 
                 // Check if password matches
@@ -99,7 +100,130 @@ class UserController {
             console.error("Database query error:", error);
             res.status(500).json({ success: false, error: "Internal server error" }); 
         } 
-      };
+    };
+
+    async getUserById(req,res){
+        try{
+            const userId = req.params.ID;
+            // console.log("fromcontroller",req.body);
+            const userById = await this.user.findById(userId).select('firstname lastname displayname email phone role');
+            //  console.log(userById);
+            if(userById){
+                res.status(200).send(userById);
+            }else{
+                res.status(401).send({
+                    success: false,
+                    message: 'user not found'
+                });
+            }
+            
+        }catch(err){
+            res.send(err);
+        }
+       
+       
+    }
+
+    async verify_email(req,res){
+        let origin = (req.headers.origin);
+        // console.log(req.headers.host);
+      
+        const user_email = req.body.vemail;
+        let userx="";
+        // console.log(user_email);
+        if(user_email!=""){
+        
+        try{
+      
+            userx =  await this.user.findOne({ email: user_email }); 
+            if(userx){
+                // console.log(userx);
+                let reset_token = await this.token.findOne({ userId: userx._id });
+                    if (!reset_token) {
+                    reset_token = await new this.token({
+                            userId: userx._id,
+                            token: crypto.randomBytes(32).toString("hex"),
+                        }).save();
+                    }
+                // console.log(process.env.BASE_URL);
+                if(origin == undefined){
+                    origin = process.env.MAIL_SEND_BASE_URL
+                }
+                const link = `${origin}/password-reset/${userx._id}/${reset_token.token}`;
+                const mailStatus = await sendEmail.sendEmail(user_email, "Password reset", link);
+                if(mailStatus.status=='sent'){
+                    res.status(201).send({
+                        success:true,
+                        User:"Verified",
+                        message:"password reset link sent to your email account",
+                    })
+                }else{
+                    res.status(500).send({
+                        success:false,
+                        User:"Verified",
+                        message:"mail failed",
+                    })
+                }
+                
+            }
+            else{
+                res.status(404).send({
+                success:false,
+                User:"Not Registered User",
+                
+            })
+            }
+      
+        }
+        catch(error){
+          console.log(error);
+          res.status(201).send({
+             
+            message:"Something Went Wrong",
+           
+        })
+        }
+       
+      }else{
+        res.status(401).send({
+            success:false,
+            message:'empty email'
+        })
+      }
+        
+    }
+
+    async resetPasswordByEmail(req,res){
+        try {
+            console.log(req.body);
+            const userX = await this.user.findById(req.body.userId);
+            if (!userX) return res.status(404).send({
+                success:false,
+                message:'Invalid User'
+            });
+    
+            const find_token = await this.token.findOne({
+                userId: req.body.userId,
+                token: req.body.token,
+            });
+            if (!find_token) return res.status(401).send({
+                success:false,
+                message:'Empty Token'
+            });
+    
+            userX.password = req.body.password;
+            await userX.save();
+            await find_token.deleteOne();
+    
+            return res.status(200).send({
+                success: true,
+                message: "Password Reset Successfully!",
+            });
+        } catch (error) {
+            res.send("An error occured");
+            console.log(error);
+        }
+    }
 
 }
 

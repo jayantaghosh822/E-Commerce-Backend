@@ -37,9 +37,9 @@ class Server {
     }
 
     // Middlewares
-    middlewares() {
-        this.app.use(express.json()); // Parse JSON requests
-    }
+    // middlewares() {
+    //     this.app.use(express.json()); // Parse JSON requests
+    // }
 
     // Routes
     routes() {
