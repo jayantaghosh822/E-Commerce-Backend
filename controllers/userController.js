@@ -206,10 +206,18 @@ class UserController {
                 userId: req.body.userId,
                 token: req.body.token,
             });
-            if (!find_token) return res.status(401).send({
-                success:false,
-                message:'Empty Token'
-            });
+
+            if(req.body.token){
+                console.log("gere");
+                if (!find_token) return res.status(401).send({
+                    success:false,
+                    message:'Token Expired'
+                });
+            }
+            // if (!find_token) return res.status(401).send({
+            //     success:false,
+            //     message:'Empty Token'
+            // });
     
             userX.password = req.body.password;
             await userX.save();
