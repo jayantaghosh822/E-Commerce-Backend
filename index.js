@@ -1,9 +1,10 @@
 const express = require('express');
 const dbConn = require('./config/db');
 const authRoutes = require("./routes/userRoute");
+const categoryRoutes = require("./routes/categoryRoute");
 const cors = require("cors");
 const corsOptions = {
-    origin: "https://yourfrontend.com", // Allow only specific domains
+    origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
 };
@@ -45,6 +46,8 @@ class Server {
     routes() {
         const authRoutes = require("./routes/userRoute");
         this.app.use('/api/user', authRoutes); // Use user routes
+        const categoryRoutes = require("./routes/categoryRoute");
+        this.app.use('/api/', categoryRoutes); // Use category routes 
     }
 
     // Start Server
