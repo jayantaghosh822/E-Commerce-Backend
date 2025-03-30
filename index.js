@@ -1,10 +1,13 @@
 const express = require('express');
+const path = require('path');
 const dbConn = require('./config/db');
 const authRoutes = require("./routes/userRoute");
 const categoryRoutes = require("./routes/categoryRoute");
+const productRoutes = require("./routes/productRoute");
 const cors = require("cors");
 const corsOptions = {
-    origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
+    // origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
+    origin: "*",
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
 };
@@ -12,7 +15,11 @@ const corsOptions = {
 class Server {
     constructor() {
         this.app = express();
+        this.app.use('/public', express.static('public'));
+        // this.app.use('/img', express.static(path.join(__dirname, 'public/img')));
+
         this.app.use(express.json());
+        this.app.use(express.urlencoded({ extended: true }));
         this.port = 5000;
         this.databaseURI = process.env.MONGODB_URI;
         // this.app.use((req, res, next) => {
@@ -48,6 +55,15 @@ class Server {
         this.app.use('/api/user', authRoutes); // Use user routes
         const categoryRoutes = require("./routes/categoryRoute");
         this.app.use('/api/', categoryRoutes); // Use category routes 
+
+        const colorRoutes = require("./routes/colorRoute");
+        this.app.use('/api/', colorRoutes); // Use color routes 
+
+        const brandRoutes = require("./routes/brandRoute");
+        this.app.use('/api/', brandRoutes); // Use brand routes 
+
+        const productRoutes = require("./routes/productRoute");
+        this.app.use('/api/', productRoutes); // Use product routes 
     }
 
     // Start Server

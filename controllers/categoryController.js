@@ -124,6 +124,27 @@ class CategoryController {
         }
         
     }
+    async deleteCategory(req,res){
+        try{
+            const catID = req.params.id;
+            if(catID){
+                const updateCategory = await this.category.findByIdAndDelete(catID);
+                if(updateCategory){
+                    res.status(200).json({
+                        "success":true,
+                        "message":"Category Deleted Successfully!"
+                    })
+                }
+                // console.log("updated",updateCategory);
+            }
+        }catch(err){
+            res.status(500).json({
+                "success":false,
+                "message":"Server Error!"
+            })
+        }
+        
+    }
 }
 module.exports =  CategoryController;
 

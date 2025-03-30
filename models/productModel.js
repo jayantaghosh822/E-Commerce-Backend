@@ -14,22 +14,28 @@ const ProductSchema = new mongoose.Schema(
     type:String,
     //required:true,
    },
-    price:{
-        type:Number,
-        //required:true,
-    },
+    // price:{
+    //     type:Number,
+    //     //required:true,
+    // },
     category:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Category",
         //required:true,
     },
-    quan:{
-        type:Number,
-        //required:true,
+    size:[{
+        size: String,
+        quantity: Number,
+        price: Number
+    }],
+    color:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Color",
     },
-    photo:{
-        data:Buffer,
-        contentType:String,
+    image:{
+        // data:Buffer,
+        // contentType:String,
+        type:String,
     },
     shipping:{
         type:Boolean,
