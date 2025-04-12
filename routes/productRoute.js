@@ -19,10 +19,11 @@ class ProductRoutes{
     constructor(){
         this.router = express.Router();
         this.ProductController = new ProductController(); // ✅ Create an instance
-        // this.allProducts = (req,res)=>this.ProductController.allProducts(req,res);
+        this.allProducts = (req,res)=>this.ProductController.allProducts(req,res);
         this.saveProduct = (req,res)=>this.ProductController.saveProduct(req,res);
-        // this.getProduct = (req,res)=>this.ProductController.getProductById(req,res);
-        // this.editProduct = (req,res)=>this.ProductController.editProduct(req,res);
+        this.getProductByID = (req,res)=>this.ProductController.getProductByID(req,res);
+        this.updateProduct = (req,res)=>this.ProductController.updateProduct(req,res);
+        this.getProductByCategorySlug = (req,res)=>this.ProductController.productByCatSlug(req,res);
         // this.deleteProduct = (req,res)=>this.ProductController.deleteProduct(req,res);
         this.createRoutes();
     }
@@ -36,6 +37,7 @@ class ProductRoutes{
         ]), 
         this.saveProduct
       );
+      this.router.get('/product-by-category', this.getProductByCategorySlug);
         // this.router.get('/Product/:slug', this.getProduct);
         // this.router.put('/Product/edit/:id', this.editProduct);
         // this.router.delete('/Product/delete/:id', this.deleteProduct);

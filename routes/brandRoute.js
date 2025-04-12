@@ -8,10 +8,10 @@ class brandRoutes{
         this.router = express.Router();
         this.brandController = new brandController(); // ✅ Create an instance
         this.allBrands = (req,res)=>this.brandController.allBrands(req,res);
-        this.savebrand = (req,res)=>this.brandController.savebrand(req,res);
-        this.getbrand = (req,res)=>this.brandController.getbrandById(req,res);
-        this.editbrand = (req,res)=>this.brandController.editbrand(req,res);
-        this.deletebrand = (req,res)=>this.brandController.deletebrand(req,res);
+        this.savebrand = (req,res)=>this.brandController.saveBrand(req,res);
+        this.getbrand = (req,res)=>this.brandController.getBrandById(req,res);
+        this.editbrand = (req,res)=>this.brandController.editBrand(req,res);
+        this.deletebrand = (req,res)=>this.brandController.deleteBrand(req,res);
         this.createRoutes();
     }
     createRoutes(){

@@ -6,9 +6,9 @@ const categoryRoutes = require("./routes/categoryRoute");
 const productRoutes = require("./routes/productRoute");
 const cors = require("cors");
 const corsOptions = {
-    // origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
-    origin: "*",
+    origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE",
+    credentials: true, 
     allowedHeaders: "Content-Type,Authorization",
 };
 

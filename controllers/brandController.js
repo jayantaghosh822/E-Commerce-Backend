@@ -32,7 +32,7 @@ class brandController {
             });
         }
     }
-    async savebrand(req, res) {
+    async saveBrand(req, res) {
         try {
             // console.log(req.body);
             const {name , slug , parent} = req.body;
@@ -76,7 +76,7 @@ class brandController {
             });
         }
     }
-    async getbrandById(req,res){
+    async getBrandById(req,res){
     const catSlug = req.params.slug;
     
     try{
@@ -100,7 +100,7 @@ class brandController {
     
     }
     
-    async editbrand(req,res){
+    async editBrand(req,res){
         try{
             const catID = req.params.id;
             const brand = await this.brand.findById(catID);
@@ -124,7 +124,7 @@ class brandController {
         }
         
     }
-    async deletebrand(req,res){
+    async deleteBrand(req,res){
         try{
             const catID = req.params.id;
             if(catID){
