@@ -86,21 +86,27 @@ class UserRoutes{
     constructor(){
         this.router = express.Router();
         this.userController = new UserController(); // ✅ Create an instance
+        this.verifyUser = (req, res) => this.userController.verifyToken(req, res);
         this.userRegisterController = (req, res) => this.userController.userRegister(req, res);
         this.userLoginController = (req, res) => this.userController.userLogin(req, res);
+
+        this.userAuthGoogleController = (req, res) => this.userController.userAuthGoogle(req, res);
+
         this.userByIdController = (req, res) => this.userController.getUserById(req, res);
-        this.verifyEmail = (req,res) => this.userController.verify_email(req, res);
+        this.sendPasswordResetLink = (req,res) => this.userController.sendPasswordResetLink(req, res);
         this.resetPassByEmail = (req,res) => this.userController.resetPasswordByEmail(req, res);
         this.authsCheck = new authMiddleware();
         this.requireAuthCheck = (req,res,next) => this.authsCheck.requireSignIn(req, res , next);
         this.createRoutes();
     }
     createRoutes(){
+        this.router.get('/verify-user', this.verifyUser);
         this.router.post('/register', this.userRegisterController);
         this.router.post('/login', this.userLoginController);
+        this.router.post('/auth-google', this.userAuthGoogleController);
         this.router.get('/user-by-id/:ID', this.requireAuthCheck, this.userByIdController);
-        this.router.post('/verify-email', this.verifyEmail);
-        this.router.post('/reset-password-by-email', this.resetPassByEmail);
+        this.router.post('/send-pasword-reset-link', this.sendPasswordResetLink);
+        this.router.post('/reset-pass-by-link', this.resetPassByEmail);
     }
     getRoutes(){
         return this.router;

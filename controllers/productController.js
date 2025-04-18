@@ -503,7 +503,7 @@ class ProductController {
     async productByCatSlug(req,res){
         const catSlug = req.query.category;
         const page = parseInt(req.headers.page_no) || 1;
-        //console.log('my-slug',cat_slug);
+        console.log('my-slug');
         console.log(catSlug);
         try{
           const getCategory = await this.category.findOne({slug:catSlug});

@@ -1,30 +1,35 @@
 const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema(
-    {
-   firstname:{
-    type:String,
-    required:true,
-    trim:true,
-   },
-   lastname:{
-    type:String,
-    required:true,
-    trim:true,
-   },
-   displayname:{
-    type:String,
-    required:true,
-    trim:true,
-   },
-   email:{
-    type:String,
-    required:true,
-    unique:true,
-   },
-   password:{
-    type:String,
-    required:true,
-   },
+{
+    firstname:{
+        type:String,
+        required:true,
+        trim:true,
+    },
+    lastname:{
+        type:String,
+        required:true,
+        trim:true,
+    },
+    displayname:{
+        type:String,
+        required:true,
+        trim:true,
+    },
+    email:{
+        type:String,
+        required:true,
+        unique:true,
+    },
+    password:{
+        type:String,
+        required:true,
+    },
+    auth_provider: {
+    type: String,
+    enum: ["google", "password"], // for safety
+    default: "password",          // default for normal email/password signups
+    },
     phone:{
         type:String,
         required:true,

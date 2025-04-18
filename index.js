@@ -5,6 +5,7 @@ const authRoutes = require("./routes/userRoute");
 const categoryRoutes = require("./routes/categoryRoute");
 const productRoutes = require("./routes/productRoute");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const corsOptions = {
     origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE",
@@ -28,6 +29,7 @@ class Server {
         //     }
         // });
         this.app.use(cors(corsOptions));
+        this.app.use(cookieParser());
         this.connectDB();
         // this.middlewares();
         this.routes();
