@@ -503,11 +503,11 @@ class ProductController {
     async productByCatSlug(req,res){
         const catSlug = req.query.category;
         const page = parseInt(req.headers.page_no) || 1;
-        console.log('my-slug');
-        console.log(catSlug);
+        // console.log('my-slug');
+        // console.log(catSlug);
         try{
           const getCategory = await this.category.findOne({slug:catSlug});
-          console.log(getCategory);
+        //   console.log(getCategory);
           if(getCategory){
             // console.log('here');
               let catId = getCategory._id;
@@ -518,7 +518,7 @@ class ProductController {
               .populate('brand'); // <-- virtual populate
             //   console.log(getProducts);
               const itemsLength = getProducts.length;
-              console.log(itemsLength);
+            //   console.log(itemsLength);
               if(getProducts){
                   //console.log(get_products);
                   // const page = parseInt(req.query.page) || 1;
@@ -531,15 +531,15 @@ class ProductController {
                     return pro.size;
                 });
                 const flattenedSizes = sizes.flat();
-                console.log("sizes");
-                console.log(flattenedSizes);
-                console.log("sizes");
+                // console.log("sizes");
+                // console.log(flattenedSizes);
+                // console.log("sizes");
                 const colors = paginatedProducts.map((pro)=>{
                     return pro.color;
                 });
                
 
-                console.log("uniquecolors");
+                // console.log("uniquecolors");
                 // console.log(colors);
                 const uniqueColors = [];
 
@@ -552,11 +552,11 @@ class ProductController {
                     uniqueColors.push(color);
                 }
                 });
-                console.log(uniqueColors);
-                console.log("uniquecolors");
+                // console.log(uniqueColors);
+                // console.log("uniquecolors");
 
 
-                console.log("uniqueBrands");
+                // console.log("uniqueBrands");
                 const brands = paginatedProducts.map((pro)=>{
                     return pro.brand;
                 });
@@ -572,8 +572,8 @@ class ProductController {
                 }
                 });
 
-                console.log(uniqueBrands);
-                console.log("uniqueBrands");
+                // console.log(uniqueBrands);
+                // console.log("uniqueBrands");
                 res.status(200).json({ message: 'Product Found successfully', products: paginatedProducts ,currentPage: page, total_products:itemsLength,
                 colors:uniqueColors,
                 brands:uniqueBrands,
@@ -588,8 +588,66 @@ class ProductController {
     }
   
     async filterProducts(req,res){
+        console.log(req.query);
+        const prices = req.query.prices || [];
+        console.log(prices);
+        let pricesToFilter = prices.map((ele)=>{
+            return ele.split('-');
+        });
+        console.log(pricesToFilter);
+        pricesToFilter = pricesToFilter.flat();
+        console.log(pricesToFilter);
+        return;
+        const brands = req.query.brands || [];
+        // console.log(brands);
+        const colors = req.query.colors || [];
+        // console.log(colors);
+        const sizes = req.query.sizes || [];
+
+
+        const filter = {};
+
+        if (brands && brands.length > 0) {
+        filter.brand = { $in: brands };
+        }
+
+        if (colors && colors.length > 0) {
+        filter.color = { $in: colors };
+        }
+
+        if (sizes && sizes.length > 0) {
+            filter['size.size'] = { $in: sizes };
+        }
+
+        console.log(filter);
+        
+        // "grades.grade" :"A",
+        // return;
+        // let filter = {};
+        // if(brands){
+        //     filter.brands = brands;
+        // }
+
+        // if(colors){
+        //     filter.colors = colors;
+        // }
+       
+        let queryByBrands = await this.product.find(
+           {
+            $and:[
+                filter
+            ]
+           },
+           {"name" : 1 , "size": 1}
+        );
+        console.log(queryByBrands);
+        const availableSizes = queryByBrands.map((ele)=>{
+           return ele.size;
+        });
+        console.log(availableSizes.flat()); 
+        return;
         const product_category = req.query.category;
-        const brands = req.query.brands;
+        // const brands = req.query.brands;
         const product_colors = req.query.colors;
         let pro_cat_id = "";
         // console.log((req.query));

@@ -91,7 +91,7 @@ class UserRoutes{
         this.userLoginController = (req, res) => this.userController.userLogin(req, res);
 
         this.userAuthGoogleController = (req, res) => this.userController.userAuthGoogle(req, res);
-
+        this.userLogout = (req, res) => this.userController.userLogout(req, res);
         this.userByIdController = (req, res) => this.userController.getUserById(req, res);
         this.sendPasswordResetLink = (req,res) => this.userController.sendPasswordResetLink(req, res);
         this.resetPassByEmail = (req,res) => this.userController.resetPasswordByEmail(req, res);
@@ -104,9 +104,10 @@ class UserRoutes{
         this.router.post('/register', this.userRegisterController);
         this.router.post('/login', this.userLoginController);
         this.router.post('/auth-google', this.userAuthGoogleController);
+        this.router.post('/log-out', this.userLogout);
         this.router.get('/user-by-id/:ID', this.requireAuthCheck, this.userByIdController);
         this.router.post('/send-pasword-reset-link', this.sendPasswordResetLink);
-        this.router.post('/reset-pass-by-link', this.resetPassByEmail);
+        this.router.post('/reset-password', this.resetPassByEmail);
     }
     getRoutes(){
         return this.router;

@@ -24,6 +24,7 @@ class ProductRoutes{
         this.getProductByID = (req,res)=>this.ProductController.getProductByID(req,res);
         this.updateProduct = (req,res)=>this.ProductController.updateProduct(req,res);
         this.getProductByCategorySlug = (req,res)=>this.ProductController.productByCatSlug(req,res);
+        this.filterProducts = (req,res)=>this.ProductController.filterProducts(req,res);
         // this.deleteProduct = (req,res)=>this.ProductController.deleteProduct(req,res);
         this.createRoutes();
     }
@@ -38,7 +39,8 @@ class ProductRoutes{
         this.saveProduct
       );
       this.router.get('/product-by-category', this.getProductByCategorySlug);
-        // this.router.get('/Product/:slug', this.getProduct);
+      this.router.get('/filter-products', this.filterProducts);
+      // this.router.get('/Product/:slug', this.getProduct);
         // this.router.put('/Product/edit/:id', this.editProduct);
         // this.router.delete('/Product/delete/:id', this.deleteProduct);
     }

@@ -75,8 +75,10 @@ class UserController {
                     success: true,
                     "message":"User logged in",
                     user: {
-                        "name":user.name,
-                        "email":user.email,
+                        name:user.name,
+                        email:user.email,
+                        userType:user.userType
+
                     }
                 });
             }catch(err){
@@ -122,10 +124,16 @@ class UserController {
                
                 if (isMatch) { 
                     try {
+                        console.log(my_user);
+                        let userType = 'customer';
+                        if(my_user.role == 1){
+                            userType = 'admin';
+                        }
                         const token = JWT.sign({ 
                         _id: my_user._id,
                         email: my_user.email,
-                        name: my_user.displayname 
+                        name: my_user.displayname,
+                        userType: userType
                         }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
                         res.cookie("token", token, {
                         httpOnly: true,     // Can't be accessed by JS 👈
@@ -139,6 +147,7 @@ class UserController {
                             user: {
                                 name: my_user.displayname || 'N/A', // Provide default values if fields are undefined
                                 email: my_user.email || 'N/A',
+                                userType: userType
                             },
                         });
                     } catch (error) {
@@ -161,8 +170,10 @@ class UserController {
         try{
             const user = req.body;
             if(user.email!=''){
+                console.log(user.email);
                 const existingUser = await this.user.findOne({ email: user.email });
-                if(existingUser.auth_provider == 'password'){
+                console.log(existingUser);
+                if(existingUser && existingUser.auth_provider == 'password'){
                     console.log("sending wromg auh mess");
                     return res.status(404).send({
                         success: false,
@@ -170,6 +181,7 @@ class UserController {
                     });
                 }
                 console.log("user ret",existingUser);
+                
                 if(existingUser==null){
                     console.log("usr not presenbt");
                     const firstname = user.firstname;
@@ -196,9 +208,10 @@ class UserController {
                     if(newUser){
                         try {
                             const token = JWT.sign({ 
-                                _id: my_user._id,
-                                email: my_user.email,
-                                name: my_user.displayname 
+                                _id: newUser._id,
+                                email: newUser.email,
+                                name: newUser.displayname,
+                                userType: 'customer'
                                 }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
 
                             res.cookie("token", token, {
@@ -213,7 +226,7 @@ class UserController {
                                 user: {
                                     name: newUser.displayname || 'N/A', // Provide default values if fields are undefined
                                     email: newUser.email || 'N/A',
-                                
+                                    userType: 'customer'
                                 },
                             });
                         } catch (error) {
@@ -222,8 +235,18 @@ class UserController {
                         }
                     }
                 }else{
+                    let userType = 'customer';
+                    if(existingUser.role == 1){
+                        userType = 'admin';
+                    }
                     console.log("usr presenbt");
-                    const token = JWT.sign({ _id: existingUser._id }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+                    // const token = JWT.sign({ _id: existingUser._id }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+                    const token = JWT.sign({ 
+                        _id: existingUser._id,
+                        email: existingUser.email,
+                        name: existingUser.displayname,
+                        userType: 'customer'
+                        }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
                     res.cookie("token", token, {
                         httpOnly: true,     // Can't be accessed by JS 👈
                         secure: true,       // Only sent over HTTPS (use false in local dev)
@@ -236,6 +259,7 @@ class UserController {
                         user: {
                             name: existingUser.displayname || 'N/A', // Provide default values if fields are undefined
                             email: existingUser.email || 'N/A',
+                            userType: userType
                         },
                     });
                     
@@ -246,6 +270,15 @@ class UserController {
             res.status(500).json({ success: false, error: "Internal server error" });
         }
        
+    }
+
+    async userLogout(req, res){
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Lax",
+        });
+        res.status(200).json({ message: "Logged out" });
     }
 
     async getUserById(req,res){
@@ -301,13 +334,13 @@ class UserController {
                     res.status(201).send({
                         success:true,
                         User:"Verified",
-                        message:"password reset link sent to your email account",
+                        message:"Password reset link sent to your email account",
                     })
                 }else{
                     res.status(500).send({
                         success:false,
                         User:"Verified",
-                        message:"mail failed",
+                        message:"Something Went Wrong",
                     })
                 }
                 
@@ -315,7 +348,7 @@ class UserController {
             else{
                 res.status(404).send({
                 success:false,
-                User:"Not Registered User",
+                message:"Not Registered User",
                 
             })
             }
@@ -354,10 +387,10 @@ class UserController {
     
             const find_token = await this.token.findOne({
                 userId: req.body.userId,
-                token: req.body.token,
+                token: req.body.resetToken,
             });
 
-            if(req.body.token){
+            if(req.body.resetToken){
                 // console.log("gere");
                 if (!find_token) return res.status(401).send({
                     success:false,
@@ -369,7 +402,7 @@ class UserController {
                 message:'Empty Token'
             });
     
-            userX.password = req.body.password;
+            userX.password = req.body.vpass;
             await userX.save();
             await find_token.deleteOne();
     
