@@ -4,6 +4,7 @@ const dbConn = require('./config/db');
 const authRoutes = require("./routes/userRoute");
 const categoryRoutes = require("./routes/categoryRoute");
 const productRoutes = require("./routes/productRoute");
+const cartRoutes = require("./routes/cartRoute");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const corsOptions = {
@@ -66,6 +67,9 @@ class Server {
 
         const productRoutes = require("./routes/productRoute");
         this.app.use('/api/', productRoutes); // Use product routes 
+
+        const cartRoutes = require("./routes/cartRoute");
+        this.app.use('/api/', cartRoutes); // Use product routes 
     }
 
     // Start Server

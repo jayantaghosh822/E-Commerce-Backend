@@ -520,21 +520,38 @@ class ProductController {
               const itemsLength = getProducts.length;
             //   console.log(itemsLength);
               if(getProducts){
-                  //console.log(get_products);
+                //   console.log(getProducts);
                   // const page = parseInt(req.query.page) || 1;
-                const limit = 5; // Number of products per page
+                const limit = 3; // Number of products per page
                 const startIndex = (page - 1) * limit;
                 const endIndex = page * limit;
         
                 const paginatedProducts  = getProducts.slice(startIndex, endIndex);
-                const sizes = paginatedProducts.map((pro)=>{
+                const sizes = getProducts.map((pro)=>{
                     return pro.size;
                 });
                 const flattenedSizes = sizes.flat();
                 // console.log("sizes");
                 // console.log(flattenedSizes);
                 // console.log("sizes");
-                const colors = paginatedProducts.map((pro)=>{
+
+                const uniqueSizes = [];
+                const seenSizes = new Set();
+
+                for (const item of flattenedSizes) {
+                if (!seenSizes.has(item.size)) {
+                    seenSizes.add(item.size);
+                    uniqueSizes.push(item);
+                }
+                }
+
+                console.log("sizes");
+                console.log(uniqueSizes);
+                console.log("sizes");
+
+
+
+                const colors = getProducts.map((pro)=>{
                     return pro.color;
                 });
                
@@ -552,9 +569,9 @@ class ProductController {
                     uniqueColors.push(color);
                 }
                 });
-                // console.log(uniqueColors);
+                // 
                 // console.log("uniquecolors");
-
+                // console.log(uniqueColors);
 
                 // console.log("uniqueBrands");
                 const brands = paginatedProducts.map((pro)=>{
@@ -572,11 +589,46 @@ class ProductController {
                 }
                 });
 
-                // console.log(uniqueBrands);
+                const lowestPriceProduct = await this.product.aggregate([
+                    { $unwind: "$size" },
+                    {
+                        $project: {
+                          _id: 1,         // keep product _id
+                          size: 1         // keep size object
+                        }
+                    },
+                    { $sort: { "size.price": 1 } },
+                    { $limit: 1 }
+                ]);
+                // console.log(lowestPriceProduct);
+                
+                const highestPriceProduct =  await this.product.aggregate([
+                    { $unwind: "$size" },
+                    {
+                        $project: {
+                          _id: 1,         // keep product _id
+                          size: 1         // keep size object
+                        }
+                    },
+                    { $sort: { "size.price": -1 } },
+                    // { $limit: 1 }
+                ]);
+
+                // console.log(highestPriceProduct);
+                // return;
+                let highestPrice = 0;
+                let lowestPrice = 0;
+                // console.log('prices limitstart');
+                // console.log(highestPriceProduct[0].size);
+                 highestPrice = highestPriceProduct[0].size.price;
+                // console.log(lowestPriceProduct[0].size);
+                 lowestPrice = lowestPriceProduct[0].size.price; 
+                // console.log('prices limitend');
                 // console.log("uniqueBrands");
-                res.status(200).json({ message: 'Product Found successfully', products: paginatedProducts ,currentPage: page, total_products:itemsLength,
+                res.status(200).json({ message: 'Product Found successfully', products: paginatedProducts ,currentPage: page, lowestPrice:lowestPrice, highestPrice:highestPrice, total_products:itemsLength,
                 colors:uniqueColors,
                 brands:uniqueBrands,
+                sizes:uniqueSizes,
                 totalPages: Math.ceil(itemsLength / limit) });
               }
           }
@@ -588,27 +640,54 @@ class ProductController {
     }
   
     async filterProducts(req,res){
-        console.log(req.query);
+        try{
+        console.time('API Time');
+        // console.log(req.query);
+        // return;
+        const cat = req.query.cat || null;
+        let catId = null;
+        if(cat){
+            const catObj = await this.category.findOne({slug:cat});
+            // console.log(catObj);
+            catId = catObj._id;
+        }
+        // return;
         const prices = req.query.prices || [];
-        console.log(prices);
+        // console.log(prices);
         let pricesToFilter = prices.map((ele)=>{
             return ele.split('-');
         });
-        console.log(pricesToFilter);
+        // console.log(pricesToFilter);
         pricesToFilter = pricesToFilter.flat();
-        console.log(pricesToFilter);
-        return;
+        // console.log("prices",pricesToFilter);
+        let maxPrice = 0;
+        let minPrice = 0;
+        if(pricesToFilter){
+            maxPrice = Math.max(...pricesToFilter);
+            minPrice = Math.min(...pricesToFilter);
+        }
+        
+        // console.log(maxPrice , minPrice);
+       
         const brands = req.query.brands || [];
         // console.log(brands);
         const colors = req.query.colors || [];
         // console.log(colors);
         const sizes = req.query.sizes || [];
 
+        const currentPage = req.query.currentPage || 1;
+        
+        const limit = 3;                      // always 3 items per page
+        const startIndex = limit*(currentPage-1)
+        const endIndex = (currentPage) * limit; // correct skip formula
 
         const filter = {};
 
+        if(catId!=null){
+            filter.category = {$in:catId};
+        }
         if (brands && brands.length > 0) {
-        filter.brand = { $in: brands };
+            filter.brand = { $in: brands };
         }
 
         if (colors && colors.length > 0) {
@@ -619,133 +698,164 @@ class ProductController {
             filter['size.size'] = { $in: sizes };
         }
 
-        console.log(filter);
-        
-        // "grades.grade" :"A",
-        // return;
-        // let filter = {};
-        // if(brands){
-        //     filter.brands = brands;
-        // }
+      
 
-        // if(colors){
-        //     filter.colors = colors;
-        // }
-       
-        let queryByBrands = await this.product.find(
-           {
-            $and:[
-                filter
-            ]
-           },
-           {"name" : 1 , "size": 1}
-        );
-        console.log(queryByBrands);
-        const availableSizes = queryByBrands.map((ele)=>{
-           return ele.size;
-        });
-        console.log(availableSizes.flat()); 
-        return;
-        const product_category = req.query.category;
-        // const brands = req.query.brands;
-        const product_colors = req.query.colors;
-        let pro_cat_id = "";
-        // console.log((req.query));
-        const query = req.query;
-        //console.log(brands);
-        //console.log(colors);
-        const page = parseInt(req.query.page_no) || 1;
-        const cat_id = await category.findOne({slug:product_category});
-        if(cat_id){
-          //console.log(cat_id);
-          pro_cat_id = cat_id._id;
+        if (maxPrice>0 && minPrice>0) {
+            filter['size'] = { 
+                $elemMatch: {
+                    price: { $gte: minPrice, $lte: maxPrice } // <-- flipped
+                } 
+            };
         }
-        const parsed_query = {
-            category:pro_cat_id,
-            brands: JSON.parse(query.brands),
-            sizes: JSON.parse(query.sizes),
-            colors: JSON.parse(query.colors),
-          };
-          console.log('parsed_query',parsed_query);
+
+     
+
+        // console.log(filter);
+       
+        // console.log(startIndex);
+        // console.log(endIndex);
+       
+        let queryFilteredProducts = await this.product.find(
+            filter,
+            { "name": 1, "size": 1 }
+        )
+        .populate('images')
+        .populate('color')
+        .populate('brand');
+
+        // console.log(queryFilteredProducts);
+        const allProductsInCategory = await this.product.find({ category: catId }, { brand: 1, color: 1, size: 1 }).populate('brand').populate('color');
         
        
-    try {
-        let query = {};
-        let productIds="";
-        function isObjEmpty (obj) {
-            return Object.keys(obj).length === 0;
+
+
+        //collecting brands for the querid products start
+        const brandsFromProducts = allProductsInCategory.map((pro)=>{
+            return pro.brand;
+        });
+        const uniqueBrands = [];
+
+        const brandsSeen = new Set();
+
+        brandsFromProducts.forEach(brand => {
+        const idStr = brand._id.toString();
+        if (!brandsSeen.has(idStr)) {
+            brandsSeen.add(idStr);
+            uniqueBrands.push(brand);
         }
-        let initial_products = "";
-        if (!(isObjEmpty(parsed_query.brands))) {
-            const brandIds = Object.keys(parsed_query.brands);
-            initial_products = await product.find({ brand: { $in: brandIds },category:parsed_query.category }).select('_id');
-            // console.log('initial products1',initial_products);
-            productIds = initial_products.map(product => product._id);
-            query.product = { $in: productIds };
-        }else{
-            initial_products = await product.find({category:parsed_query.category }).select('_id');
-            // console.log('initial products2',initial_products);
-            productIds = initial_products.map(product => product._id);
-            query.product = { $in: productIds };
+        });
+        //collecting brands for the querid products end
+
+
+        //collecting highest and lowest price for the querid products start
+
+        // const lowestPriceProduct = await this.product.aggregate([
+        //     { $unwind: "$size" },
+        //     {
+        //         $project: {
+        //           _id: 1,         // keep product _id
+        //           size: 1         // keep size object
+        //         }
+        //     },
+        //     { $sort: { "size.price": 1 } },
+        //     { $limit: 1 }
+        // ]);
+      
+        
+        // const highestPriceProduct =  await this.product.aggregate([
+        //     { $unwind: "$size" },
+        //     {
+        //         $project: {
+        //           _id: 1,         // keep product _id
+        //           size: 1         // keep size object
+        //         }
+        //     },
+        //     { $sort: { "size.price": -1 } },
+        //     // { $limit: 1 }
+            
+        // ]);
+        // let highestPrice = 0;
+        // let lowestPrice = 0;
+        // highestPrice = highestPriceProduct[0].size.price;
+        // lowestPrice = lowestPriceProduct[0].size.price; 
+
+         //chatgpt
+         const allSizes = allProductsInCategory.flatMap(product => 
+            product.size.map(size => ({
+              productId: product._id,
+              price: size.price,
+              sizeInfo: size,
+            }))
+          );
+          
+          // Find the lowest and highest price
+          const lowestPriceProductchat = allSizes.reduce((min, current) => current.price < min.price ? current : min, allSizes[0]);
+          const highestPriceProductchat = allSizes.reduce((max, current) => current.price > max.price ? current : max, allSizes[0]);
+        //   console.log(lowestPriceProductchat);
+        //   console.log(highestPriceProductchat);
+
+            let highestPrice = 0;
+            let lowestPrice = 0;
+            
+            highestPrice = lowestPriceProductchat.sizeInfo.price;
+            lowestPrice = highestPriceProductchat.sizeInfo.price;
+
+        //chatgpt
+
+        //collecting highest and lowest price for the querid products end
+
+
+        //collecting sizes for the querid products start
+        const sizesFromProducts = allProductsInCategory.map((pro)=>{
+            return pro.size;
+        });
+        const flattenedSizes = sizesFromProducts.flat();
+        const uniqueSizes = [];
+        const seenSizes = new Set();
+
+        for (const item of flattenedSizes) {
+        if (!seenSizes.has(item.size)) {
+            seenSizes.add(item.size);
+            uniqueSizes.push(item);
         }
-    
-        // Check if colors is present in parsed_query
-        if (!(isObjEmpty(parsed_query.colors))) {
-            const var_colors = Object.keys(parsed_query.colors);
-            query.color = { $in: var_colors };
-            // console.log('color_query',query);
-        // Query ColorVariants collection using the constructed query
-        const my_colorVariants = await colors.distinct('product',query);
-        // console.log('color_query_result',my_colorVariants);
-        productIds = my_colorVariants;
-        // console.log('color_query',my_colorVariants);
-        query.product = { $in: productIds };
-        // console.log('final_query',productIds);
         }
-        if (!(isObjEmpty(parsed_query.sizes))) {
-            const var_sizes = (parsed_query.sizes);
-            console.log('var_sizes',var_sizes);
-            var fetch_size_ids =  await sizes.find({slug:var_sizes}).select('_id');
-            console.log('size_ids' , fetch_size_ids);
-            fetch_size_ids = fetch_size_ids.map(obj => obj._id);
-            query.color = null;
-            query.size = { $in: fetch_size_ids };
-            console.log('size_query',query);
-        // Query ColorVariants collection using the constructed query
-        // const fetch_size_ids = 
-       const my_sizeVariants = await product_size_variants.distinct('product',query);
-        // // const my_sizeVariants = await product_size_variants.find(query)
-        // .populate('size') // Populate the 'size' field with data from the Size collection
-        // .exec();
-        // console.log('size_query_result',my_sizeVariants);
-        productIds = my_sizeVariants;
-        // console.log('my_filtered_products',productIds);
-        // console.log('filtered_duplicate_arrs',productIds);
-        // console.log('my_filtered_products',uniqueProductIdsArray);
-        // console.log('typeof ',typeof(uniqueProductIdsArray));
-        // console.log('final_query',productIds);
-        }
-    
-    
-        const items_length = productIds.length;
-        console.log(items_length);
-        const limit = 2; // Number of products per page
-        const startIndex = (page - 1) * limit;
-        const endIndex = page * limit;
-    
-        const filteredProductIds = productIds.slice(startIndex, endIndex);
-    
-        const filtered_products = await product.find({ _id: { $in: filteredProductIds } });
-    //  const filtered_products = await product.find({_id:{$in:productIds}});
-    //  console.log('my_filtered_products',filtered_products);
-     res.status(200).json({ message: 'Product Found successfully', data: filtered_products ,currentPage: page,total_products:items_length,
-     totalPages: Math.ceil(productIds.length / limit) });
+        //collecting sizes for the querid products end
+
+        //collecting sizes for the querid products start
+        const colorsFromProducts = allProductsInCategory.map((pro)=>{
+            return pro.color;
+        });
+        const uniqueColors = [];
+
+        const colorsSeen = new Set();
+
+        colorsFromProducts.forEach(color => {
+            const idStr = color._id.toString();
+            if (!colorsSeen.has(idStr)) {
+                colorsSeen.add(idStr);
+                uniqueColors.push(color);
+            }
+        });
+        //collecting sizes for the querid products end
+
+        const paginatedProducts = queryFilteredProducts.slice(startIndex , endIndex);
+        // console.log(paginatedProducts);
+        // return;
+        console.timeEnd('API Time');
+        res.status(200).json({ message: 'Product Found successfully', products: paginatedProducts ,currentPage: currentPage, total_products:queryFilteredProducts.length,
+            colors:uniqueColors,
+            brands:uniqueBrands,
+            sizes:uniqueSizes,
+            lowestPrice: lowestPrice,
+            highestPrice: highestPrice,
+            totalPages: Math.ceil(queryFilteredProducts.length / limit) });
     } catch (error) {
         console.error('Error filtering color variants:', error);
-        throw error;
+        // throw error;
+    }
     }
     
-    }
+    
 
     async removeDuplicates(arr){
         return arr.filter((item, index) => arr.indexOf(item) === index);
