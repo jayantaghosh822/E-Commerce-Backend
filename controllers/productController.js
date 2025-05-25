@@ -649,7 +649,10 @@ class ProductController {
         if(cat){
             const catObj = await this.category.findOne({slug:cat});
             // console.log(catObj);
-            catId = catObj._id;
+            if(catObj){
+             catId = catObj._id;
+            }
+           
         }
         // return;
         const prices = req.query.prices || [];
@@ -791,14 +794,19 @@ class ProductController {
           // Find the lowest and highest price
           const lowestPriceProductchat = allSizes.reduce((min, current) => current.price < min.price ? current : min, allSizes[0]);
           const highestPriceProductchat = allSizes.reduce((max, current) => current.price > max.price ? current : max, allSizes[0]);
-        //   console.log(lowestPriceProductchat);
-        //   console.log(highestPriceProductchat);
+          console.log(lowestPriceProductchat);
+          console.log(highestPriceProductchat);
 
             let highestPrice = 0;
             let lowestPrice = 0;
-            
-            highestPrice = lowestPriceProductchat.sizeInfo.price;
+
+            if(lowestPriceProductchat){
             lowestPrice = highestPriceProductchat.sizeInfo.price;
+            }
+            if(highestPriceProductchat){
+            highestPrice = lowestPriceProductchat.sizeInfo.price;
+            }
+           
 
         //chatgpt
 
@@ -849,10 +857,11 @@ class ProductController {
             lowestPrice: lowestPrice,
             highestPrice: highestPrice,
             totalPages: Math.ceil(queryFilteredProducts.length / limit) });
-    } catch (error) {
-        console.error('Error filtering color variants:', error);
-        // throw error;
-    }
+        } catch (error) {
+            console.error('Error filtering color variants:', error);
+            return;
+            // throw error;
+        }
     }
     
     

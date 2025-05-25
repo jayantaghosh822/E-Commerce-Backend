@@ -245,7 +245,7 @@ class UserController {
                         _id: existingUser._id,
                         email: existingUser.email,
                         name: existingUser.displayname,
-                        userType: 'customer'
+                        userType: userType
                         }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
                     res.cookie("token", token, {
                         httpOnly: true,     // Can't be accessed by JS 👈

@@ -87,6 +87,23 @@ class CartController {
 
 
   async addLocalItems(req, res) {
+
+    const deepEqual = (a, b) => {
+      if (typeof a !== 'object' || typeof b !== 'object' || a == null || b == null) {
+        return a === b;
+      }
+
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+      if (keysA.length !== keysB.length) return false;
+
+      for (let key of keysA) {
+        if (!deepEqual(a[key], b[key])) return false;
+      }
+
+      return true;
+    };
+
     try {
       const unSavedCartItems = req.body.unSavedCartItems;
       // const userId = req.body.userId; // Passed from frontend
@@ -105,19 +122,59 @@ class CartController {
       if (!unSavedCartItems || !userId) {
         return res.status(400).json({ message: "Missing cart items or userId" });
       }
-  
-      const cartItems = Object.values(unSavedCartItems);
-  
-      for (const item of cartItems) {
-        const newItem = new this.cart({
-          product: item.productId,
-          userId,
-          metaData: item.metaData,
-          quan: item.metaData.quantity || 1, // default to 1 if not available
+
+      console.log("lacal Items", unSavedCartItems)
+      const savedCartItems = await this.cart.find({userId:userId}); 
+      console.log("saved cart Items", savedCartItems);
+
+      const updates = [];
+      const inserts = [];
+
+      // Go through local items
+        Object.values(unSavedCartItems).forEach(localItem => {
+          const match = savedCartItems.find(savedItem => (
+            localItem.productId === savedItem.product.toString() &&
+            deepEqual(localItem.metaData, savedItem.metaData)
+          ));
+
+          if (match) {
+            updates.push(match._id);
+          } else {
+            inserts.push({
+              product: localItem.productId,
+              userId,
+              metaData: localItem.metaData,
+              quan: 1
+            });
+          }
         });
+        
+        console.log('updates',updates);
+        console.log('inserts',inserts);
+
+        if (updates.length) {
+          await this.cart.updateMany(
+            { _id: { $in: updates } },
+            { $inc: { quan: 1 } }
+          );
+        }
+
+        // Insert new unmatched items
+        if (inserts.length) {
+          await this.cart.insertMany(inserts);
+        }
+      // const cartItems = Object.values(unSavedCartItems);
   
-        await newItem.save();
-      }
+      // for (const item of cartItems) {
+      //   const newItem = new this.cart({
+      //     product: item.productId,
+      //     userId,
+      //     metaData: item.metaData,
+      //     quan: item.metaData.quantity || 1, // default to 1 if not available
+      //   });
+  
+      //   await newItem.save();
+      // }
   
       return res.status(201).json({ message: "Items added to cart successfully" });
     } catch (error) {
