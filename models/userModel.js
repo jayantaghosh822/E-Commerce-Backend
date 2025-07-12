@@ -25,6 +25,10 @@ const UserSchema = new mongoose.Schema(
         type:String,
         required:true,
     },
+    isVerified: {
+        type: Boolean,
+        defaultValue: false
+    },
     auth_provider: {
     type: String,
     enum: ["google", "password"], // for safety

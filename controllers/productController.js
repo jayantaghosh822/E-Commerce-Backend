@@ -14,6 +14,7 @@ const brandModel = require('../models/brandModel.js');
 const colorModel = require('../models/colorModel.js');
 const ProductImagesModel = require ('../models/ProductImagesModel.js');
 const { arrayBuffer } = require('stream/consumers');
+const CategoryController = require('../controllers/categoryController.js');
 
 const cloudinary = require('cloudinary');
 
@@ -39,6 +40,8 @@ class ProductController {
         this.color = colorModel.Color;
 
         this.productImages = ProductImagesModel.ProductImages;
+
+        this.categoryController = new CategoryController();
 
     }
 
@@ -239,16 +242,28 @@ class ProductController {
     }
 
     async getProductByID(req,res){
-        //console.log(req.headers);
-        const pro_id = req.headers.pro_id;
-        const get_products = await product.findOne({_id:pro_id});
-        // console.log(get_products);
-        if(get_products){
-            return res.status(200).send({
-                success:true,
-                result:get_products
-            })
+        // console.log(req);
+        try{
+            const proId = req.query.proId;
+            const getProduct = await this.product.findOne({_id:proId})
+            .populate('images');
+            
+            if(getProduct){
+                const slugs = await this.categoryController.getCategoryPath(getProduct.category);
+                const productObj = getProduct.toObject(); // ✅ Important fix
+                productObj['categorypath'] = slugs;
+                return res.status(200).send({
+                    success:true,
+                    result:productObj
+                })
+            }
+        }catch(err){
+                return res.status(500).send({
+                    success:false,
+                    result:err
+                })
         }
+        
        
     }
 

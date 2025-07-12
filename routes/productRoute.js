@@ -40,6 +40,7 @@ class ProductRoutes{
       );
       this.router.get('/product-by-category', this.getProductByCategorySlug);
       this.router.get('/filter-products', this.filterProducts);
+      this.router.get('/get-product', this.getProductByID);
       // this.router.get('/Product/:slug', this.getProduct);
         // this.router.put('/Product/edit/:id', this.editProduct);
         // this.router.delete('/Product/delete/:id', this.deleteProduct);

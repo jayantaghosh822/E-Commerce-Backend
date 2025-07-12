@@ -95,6 +95,7 @@ class UserRoutes{
         this.userByIdController = (req, res) => this.userController.getUserById(req, res);
         this.sendPasswordResetLink = (req,res) => this.userController.sendPasswordResetLink(req, res);
         this.resetPassByEmail = (req,res) => this.userController.resetPasswordByEmail(req, res);
+        this.verifyEmail = (req,res) => this.userController.verifyEmailToken(req, res);
         this.authsCheck = new authMiddleware();
         this.requireAuthCheck = (req,res,next) => this.authsCheck.requireSignIn(req, res , next);
         this.createRoutes();
@@ -102,6 +103,7 @@ class UserRoutes{
     createRoutes(){
         this.router.get('/verify-user', this.verifyUser);
         this.router.post('/register', this.userRegisterController);
+        this.router.get('/verify-email-token',this.verifyEmail);
         this.router.post('/login', this.userLoginController);
         this.router.post('/auth-google', this.userAuthGoogleController);
         this.router.post('/log-out', this.userLogout);

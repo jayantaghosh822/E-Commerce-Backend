@@ -30,7 +30,7 @@ class UserController {
             // console.log(existing_user);
             const salt = await bcrypt.genSalt(10);
             password = await bcrypt.hash(password, salt);
-            
+            const isVerified = false;
             const role = 2;
             const auth_provider =  "password";
             if (!existing_user) {
@@ -40,16 +40,30 @@ class UserController {
                     email,
                     displayname,
                     password,
+                    isVerified,
                     auth_provider,
                     phone,
                     role
                 }).save();
 
-                return res.status(201).json({
-                    success: true,
-                    message: "User registered successfully",
-                    newUser,
-                });
+                let origin = (req.headers.origin);
+               
+
+                let reset_token = await new this.token({
+                        userId: newUser._id,
+                        token: crypto.randomBytes(32).toString("hex"),
+                }).save();
+                
+                const link = `${origin}/verify-email/${reset_token.token}`;
+                const mailStatus = await sendEmail.sendEmail(newUser.email, "Password reset", link);
+                if(mailStatus.status=='sent'){
+                    return res.status(201).json({
+                        success: true,
+                        message: "Email Verification link sent to your email account",
+                        newUser,
+                    });
+                }
+                
             } else {
                 return res.status(200).json({
                     success: false,
@@ -416,6 +430,10 @@ class UserController {
         }
     }
 
+    async verifyEmailToken(req,res){
+        const {token} = req.params;
+        console.log(token);
+    }
 }
 
 module.exports =  UserController;

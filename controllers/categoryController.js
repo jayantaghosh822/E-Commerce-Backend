@@ -145,6 +145,23 @@ class CategoryController {
         }
         
     }
+
+    async getCategoryPath(categoryId){
+        console.log('abcd');
+        console.log(categoryId);
+          console.log('abcd');
+        const path = [];
+
+        let current = await this.category.findById(categoryId).lean();
+
+        while (current) {
+        path.unshift({ name: current.name, slug: current.slug }); // insert at beginning
+        if (!current.parent) break;
+        current = await this.category.findById(current.parent).lean();
+        }
+
+        return path;
+    }
 }
 module.exports =  CategoryController;
 
