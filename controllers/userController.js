@@ -79,6 +79,50 @@ class UserController {
         }
     }
 
+    async sendEmailVerification(req,res){
+        try{
+        console.log(req.query);
+        if(req.query.userID){
+            console.log(req.query.userID);
+            const userID = req.query.userID;
+            const user = await this.user.findById(userID , {email:1});
+            console.log(user.email);
+            let origin = (req.headers.origin);
+            let reset_token = await new this.token({
+                        userId: user._id,
+                        token: crypto.randomBytes(32).toString("hex"),
+                }).save();
+                
+            const link = `${origin}/verify-email/${reset_token.token}`;
+            const mailStatus = await sendEmail.sendEmail(user.email, "Email Verification Link", link);
+            if(mailStatus.status=='sent'){
+                return res.status(201).json({
+                    success: true,
+                    message: "Email verification link sent to your email account"
+                });
+            }else{
+                return res.status(401).json({
+                    success: false,
+                    message: "Email Verification link failed to sent!"
+                });
+            }
+                
+        }
+        
+         res.status(201).send({
+            success:true,
+            message:"mail sent"
+        })
+        }catch(err){
+            console.log(err);
+            return res.status(401).json({
+                    success: false,
+                    message: "Something Went Wrong"
+            });
+        }
+        
+    }
+
     async verifyToken(req, res){
         console.log(req.cookies.token);
         if(req.cookies.token){
@@ -139,10 +183,14 @@ class UserController {
                 if (isMatch) { 
                     try {
                         console.log(my_user);
+                        if(!my_user.isVerified){
+                            return res.status(401).json({ success: false, userId:my_user._id, error: "email not verified" }); 
+                        }
                         let userType = 'customer';
                         if(my_user.role == 1){
                             userType = 'admin';
                         }
+
                         const token = JWT.sign({ 
                         _id: my_user._id,
                         email: my_user.email,
@@ -431,8 +479,47 @@ class UserController {
     }
 
     async verifyEmailToken(req,res){
-        const {token} = req.params;
+        try{
+        const token = req.query.token;
+
         console.log(token);
+        const findEmailToken = await this.token.findOne({
+            token: token,
+        });
+        let tokenId = '';
+        if(findEmailToken!=null){
+            tokenId = findEmailToken._id;
+        }
+         
+        // console.log(findEmailToken); 
+        if(findEmailToken!=null){
+        // console.log("not null");
+        let userId = findEmailToken.userId;
+        // console.log("userId:", userId);
+        const mailVerified = await this.user.findOneAndUpdate({_id:userId},{isVerified:true});
+        console.log(mailVerified); 
+        if(mailVerified){
+            res.status(201).send({
+                success:true,
+                message:"Mail Verified Successfully!",
+            })
+        }
+        await this.token.findByIdAndDelete(tokenId);
+        }else{
+            res.status(201).send({
+                success:false,
+                message:"Token Has Expired!",
+            });
+        }
+        }catch(err){
+            console.log(err);
+            res.status(500).send({
+                success:false,
+                message:"Server Error!",
+            })
+        }
+        
+
     }
 }
 
