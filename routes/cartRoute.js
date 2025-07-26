@@ -4,6 +4,7 @@ const JWT = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const CartController = require('../controllers/cartController.js');
 const multer = require('multer');
+const authMiddleware = require ('../middlewares/authMiddleware.js');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -23,13 +24,15 @@ class CartRoutes{
         this.cartItems = (req,res)=>this.CartController.cartItems(req,res);
         this.addLocalItems = (req,res)=>this.CartController.addLocalItems(req,res);
         // this.deleteProduct = (req,res)=>this.ProductController.deleteProduct(req,res);
+        this.authsCheck = new authMiddleware();
+        this.requireAuthCheck = (req,res,next) => this.authsCheck.requireSignIn(req, res , next);
         this.createRoutes();
     }
     createRoutes(){
         // this.router.get('/Products', this.allProducts);
-      this.router.post('/add-to-cart', this.addItemToCart);
-      this.router.get('/get-cart-items', this.cartItems);
-      this.router.post('/add-local-items-to-cart', this.addLocalItems);
+      this.router.post('/add-to-cart',this.requireAuthCheck, this.addItemToCart);
+      this.router.get('/get-cart-items',this.requireAuthCheck, this.cartItems);
+      this.router.post('/add-local-items-to-cart',this.requireAuthCheck, this.addLocalItems);
     //   this.router.get('/filter-products', this.filterProducts);
       // this.router.get('/Product/:slug', this.getProduct);
         // this.router.put('/Product/edit/:id', this.editProduct);

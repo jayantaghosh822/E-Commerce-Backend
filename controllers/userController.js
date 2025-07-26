@@ -5,6 +5,7 @@ const sendEmail = require("../utils/sendEmail");
 const userModel = require('../models/userModel.js');
 const tokenModel = require("../models/tokenModel.js");
 const bcrypt = require('bcryptjs');
+const refreshTokenModel = require("../models/refreshTokenModel.js");
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ class UserController {
         this.user = userModel.User; // Assigning the user model
         // this.register = this.register.bind(this);
         this.token = tokenModel.Token;
+        this.refreshToken = refreshTokenModel.RefreshToken;
     }
 
     // User Registration Method
@@ -123,27 +125,33 @@ class UserController {
         
     }
 
-    async verifyToken(req, res){
-        console.log(req.cookies.token);
-        if(req.cookies.token){
+    async fetchUser(req, res){
+        // console.log(req.cookies.token);
+        const userId = req.userId;
+        console.log(req.userId);
+        if(userId){
             try{
-                const user = JWT.verify(req.cookies.token,process.env.TOKEN_SECRET);
+                const user = await this.user.findById(userId ,{displayname:1 , email:1 , role:1});
+                let userType = 'customer';
+                if(user.role == 2){
+                    userType = 'admin';
+                }
                 console.log(user);
                 return res.status(200).send({
                     success: true,
                     "message":"User logged in",
                     user: {
-                        name:user.name,
+                        name:user.displayname,
                         email:user.email,
-                        userType:user.userType
+                        userType:userType
 
                     }
                 });
             }catch(err){
                 console.log(err);
-                return res.status(200).send({
+                return res.status(500).send({
                     success: false,
-                    message:"Token Error"
+                    message:"Server Error"
                 });
             }
             
@@ -156,17 +164,33 @@ class UserController {
         
     }
 
+    generateAccessToken(userId) {
+     return JWT.sign({  
+        _id: userId,
+      }, process.env.TOKEN_SECRET, { expiresIn: '15m' });
+    }
+
+    generateRefreshToken(userId) {
+        const refreshToken = JWT.sign({ 
+             _id: userId,
+            }, process.env.TOKEN_SECRET, {
+            expiresIn: '7d'
+        });
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        return { token: refreshToken, expiresAt };
+    }
+
     async userLogin(req, res){
-        const user_email = req.body.email;
-        const user_pass = req.body.pass;
+        const userEmail = req.body.email;
+        const userPass = req.body.pass;
       
         try { 
             // Check if the user exists
-            const my_user = await this.user.findOne({ email: user_email });
+            const user = await this.user.findOne({ email: userEmail });
             
-            if (my_user) { 
-                console.log(my_user.auth_provider);
-                if(my_user.auth_provider == 'google'){
+            if (user) { 
+                console.log(user.auth_provider);
+                if(user.auth_provider == 'google'){
                     console.log("sending wromg auh mess");
                     return res.status(404).send({
                         success: false,
@@ -175,40 +199,61 @@ class UserController {
                 }
                 // Check if password matches
                 // const result = user_pass === my_user.password;
-                const isMatch = await bcrypt.compare(user_pass, my_user.password);
+                const isMatch = await bcrypt.compare(userPass, user.password);
                 // if (!isMatch) {
                 //   return res.status(400).json({ message: "Invalid credentials." });
                 // }
                
                 if (isMatch) { 
                     try {
-                        console.log(my_user);
-                        if(!my_user.isVerified){
-                            return res.status(401).json({ success: false, userId:my_user._id, error: "email not verified" }); 
+                        console.log(user);
+                        if(!user.isVerified){
+                            return res.status(401).json({ success: false, userId:user._id, error: "email not verified" }); 
                         }
                         let userType = 'customer';
-                        if(my_user.role == 1){
+                        if(user.role == 1){
                             userType = 'admin';
                         }
 
-                        const token = JWT.sign({ 
-                        _id: my_user._id,
-                        email: my_user.email,
-                        name: my_user.displayname,
-                        userType: userType
-                        }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
-                        res.cookie("token", token, {
+                        const accessToken = this.generateAccessToken( user._id);
+                        console.log(accessToken);
+                       
+                        const { token: refreshToken, expiresAt } = this.generateRefreshToken( user._id);
+                        console.log('refreshToken',refreshToken);
+                        await this.refreshToken.create({
+                            userId: user._id,
+                            token: refreshToken,
+                            expiresAt
+                        });
+                        // const token = JWT.sign({ 
+                        // _id: my_user._id,
+                        // email: my_user.email,
+                        // name: my_user.displayname,
+                        // userType: userType
+                        // }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+
+
+                        res.cookie("accessToken", accessToken, {
                         httpOnly: true,     // Can't be accessed by JS 👈
                         secure: true,       // Only sent over HTTPS (use false in local dev)
                         sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
-                        maxAge: 24 * 60 * 60 * 1000, // 1 day
+                        maxAge: 15 * 60 * 1000, // 15 mins
                         });
+
+                        res.cookie("refreshToken", refreshToken, {
+                        httpOnly: true,     // Can't be accessed by JS 👈
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
+                        sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
+                        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 day
+                        });
+
+
                         return res.status(200).send({
                             success: true,
                             message: "User logged in",
                             user: {
-                                name: my_user.displayname || 'N/A', // Provide default values if fields are undefined
-                                email: my_user.email || 'N/A',
+                                name: user.displayname || 'N/A', // Provide default values if fields are undefined
+                                email: user.email || 'N/A',
                                 userType: userType
                             },
                         });

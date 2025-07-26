@@ -86,7 +86,7 @@ class UserRoutes{
     constructor(){
         this.router = express.Router();
         this.userController = new UserController(); // ✅ Create an instance
-        this.verifyUser = (req, res) => this.userController.verifyToken(req, res);
+        this.fetchUser = (req, res) => this.userController.fetchUser(req, res);
         this.userRegisterController = (req, res) => this.userController.userRegister(req, res);
         this.userLoginController = (req, res) => this.userController.userLogin(req, res);
         this.sendEmailVerification = (req, res) => this.userController.sendEmailVerification(req, res);
@@ -101,7 +101,7 @@ class UserRoutes{
         this.createRoutes();
     }
     createRoutes(){
-        this.router.get('/verify-user', this.verifyUser);
+        this.router.get('/me',  this.requireAuthCheck , this.fetchUser);
         this.router.post('/register', this.userRegisterController);
         this.router.get('/verify-email-token',this.verifyEmail);
         this.router.post('/login', this.userLoginController);

@@ -15,7 +15,7 @@ const colorModel = require('../models/colorModel.js');
 const cartModel = require('../models/cartModel.js');
 const ProductImagesModel = require ('../models/ProductImagesModel.js');
 const { arrayBuffer } = require('stream/consumers');
-
+const mongoose = require('mongoose');
 const cloudinary = require('cloudinary');
 
 cloudinary.v2.config({
@@ -47,163 +47,153 @@ class CartController {
 
     // User Registration Method
   async addToCart(req, res) {
+    // console.log(req);
+    // console.log(req.userId);
     try{
-      let userId = null;
+      let userId = req.userId;
       // console.log(req.cookies.token);
-      const token = req.cookies.token;
-      if(token){
-        // console.log(token);
-        const user =  JWT.verify(req.cookies.token,process.env.TOKEN_SECRET);
-        if(user){
-          console.log(user);
-          userId = user._id;
-        }
-        // console.log(userId);
-      }
-      // console.log(userId);
+      // const token = req.cookies.token;
+      
+      
      
-      const {product , metaData ,quan } =  req.body.productData;
-      // console.log(product);
-      // console.log(name);
-      // console.log(metaData);
-      const item = new this.cart({
-        product,
-        userId, 
-        metaData,
-        quan
-        // image, // Save image path in DB
-      });
-      const itemSaved = await item.save();
-      // console.log(itemSaved);
+      const item =  req.body.productData;
+      if(item.product && item.metaData && item.price && item.metaData.sizeId && item.quan){
+      // console.log('item',item);
+      const savedCartItems = await this.cart.find({ userId });
+      console.log(savedCartItems);
+
+     
+        // Look for a matching item (same product & sizeId)
+        const match = savedCartItems.find(savedItem =>
+          item.product === savedItem.product.toString() &&
+          item.metaData.sizeId === savedItem.metaData.sizeId?.toString()
+        );
+      
+      // console.log('match',match);
+      if(match){
+        const updateQuan = match.quan+item.quan;
+        console.log(updateQuan);
+        const itemUpdated = await this.cart.updateOne(
+          { _id: match._id },
+          { quan: updateQuan } 
+        );
+        if(itemUpdated){
+          // console.log(itemSaved);
+          res.status(201).json({ message: "Item Added To Cart", itemUpdated });
+        }
+      }else{
+      item.userId = userId;
+      const itemSaved =  await new this.cart(
+        item
+      ).save();
+      // console.log('itemSaved',itemSaved);
       if(itemSaved){
-        console.log(itemSaved);
+        // console.log(itemSaved);
         res.status(201).json({ message: "Item Added To Cart", itemSaved });
       }
+      }
+      return;
+      
+    }else{
+      res.status(401).json({success:false, message: "Item data missing" });
+    }
     }catch(err){
       console.log(err);
+      res.status(401).json({success:false, message: "Token Error" });
     }
      
   }
-
+  
 
   async addLocalItems(req, res) {
+      try {
+        const unSavedCartItems = req.body.unSavedCartItems;
+        let userId = req.userId;
 
-    const deepEqual = (a, b) => {
-      if (typeof a !== 'object' || typeof b !== 'object' || a == null || b == null) {
-        return a === b;
-      }
+        // const token = req.cookies.token;
+        // if (token) {
+        //   const user = JWT.verify(token, process.env.TOKEN_SECRET);
+        //   if (user) {
+        //     userId = user._id;
+        //   }
+        // }
 
-      const keysA = Object.keys(a);
-      const keysB = Object.keys(b);
-      if (keysA.length !== keysB.length) return false;
-
-      for (let key of keysA) {
-        if (!deepEqual(a[key], b[key])) return false;
-      }
-
-      return true;
-    };
-
-    try {
-      const unSavedCartItems = req.body.unSavedCartItems;
-      // const userId = req.body.userId; // Passed from frontend
-      let userId = null;
-      // console.log(req.cookies.token);
-      const token = req.cookies.token;
-      if(token){
-        // console.log(token);
-        const user =  JWT.verify(req.cookies.token,process.env.TOKEN_SECRET);
-        if(user){
-          console.log(user);
-          userId = user._id;
+        if (!Array.isArray(unSavedCartItems) || !userId) {
+          return res.status(400).json({ message: "Missing or invalid cart items or user not authenticated" });
         }
-        // console.log(userId);
-      }
-      if (!unSavedCartItems || !userId) {
-        return res.status(400).json({ message: "Missing cart items or userId" });
-      }
 
-      console.log("lacal Items", unSavedCartItems)
-      const savedCartItems = await this.cart.find({userId:userId}); 
-      console.log("saved cart Items", savedCartItems);
+        // Fetch user's existing cart items
+        const savedCartItems = await this.cart.find({ userId });
 
-      const updates = [];
-      const inserts = [];
+        const updates = [];
+        const inserts = [];
 
-      // Go through local items
-        Object.values(unSavedCartItems).forEach(localItem => {
-          const match = savedCartItems.find(savedItem => (
-            localItem.productId === savedItem.product.toString() &&
-            deepEqual(localItem.metaData, savedItem.metaData)
-          ));
+        for (const localItem of unSavedCartItems) {
+          // Look for a matching item (same product & sizeId)
+          const match = savedCartItems.find(savedItem =>
+            localItem.product === savedItem.product.toString() &&
+            localItem.sizeId === savedItem.sizeId?.toString()
+          );
 
           if (match) {
-            updates.push(match._id);
+            updates.push({
+              _id: match._id,
+              incrementBy: localItem.quan || 1
+            });
           } else {
             inserts.push({
-              product: localItem.productId,
-              userId,
-              metaData: localItem.metaData,
-              quan: 1
+              product: new mongoose.Types.ObjectId(localItem.product),
+              userId: new mongoose.Types.ObjectId(userId),
+              quan: localItem.quan || 1,
+              metaData: localItem.metaData || {},
+              price: localItem.price || 0,
+              image: localItem.image || ''
             });
           }
-        });
-        
-        console.log('updates',updates);
-        console.log('inserts',inserts);
+        }
 
-        if (updates.length) {
-          await this.cart.updateMany(
-            { _id: { $in: updates } },
-            { $inc: { quan: 1 } }
+        // Update matched items
+        for (const item of updates) {
+          await this.cart.updateOne(
+            { _id: item._id },
+            { $inc: { quan: item.incrementBy } }
           );
         }
 
-        // Insert new unmatched items
-        if (inserts.length) {
+        // Insert new items
+        if (inserts.length > 0) {
           await this.cart.insertMany(inserts);
         }
-      // const cartItems = Object.values(unSavedCartItems);
-  
-      // for (const item of cartItems) {
-      //   const newItem = new this.cart({
-      //     product: item.productId,
-      //     userId,
-      //     metaData: item.metaData,
-      //     quan: item.metaData.quantity || 1, // default to 1 if not available
-      //   });
-  
-      //   await newItem.save();
-      // }
-  
-      return res.status(201).json({ message: "Items added to cart successfully" });
-    } catch (error) {
-      console.error("Error adding items:", error);
-      return res.status(500).json({ message: "Failed to add items", error });
-    }
+
+        return res.status(201).json({ message: "Items added to cart successfully" });
+      } catch (error) {
+        console.error("Error adding local cart items:", error);
+        return res.status(500).json({ message: "Failed to add items", error });
+      }
   }
-  
+
+
 
 
 
   async cartItems(req, res) {
     try{
-      const token = req.cookies.token;
-      let userId = null;
-      if(token){
+      // const token = req.cookies.token;
+      let userId = req.userId;
+      
         // console.log(token);
-        const user =  JWT.verify(req.cookies.token,process.env.TOKEN_SECRET);
-        if(user){
-          // console.log(user);
-          userId = user._id;
-        }
+        // const user =  JWT.verify(req.cookies.token,process.env.TOKEN_SECRET);
+        // if(user){
+        //   // console.log(user);
+        //   userId = user._id;
+        // }
         // console.log(userId);
         if(userId!=null){
           const cartItems = await this.cart.find({userId:userId});
           // console.log(cartItems);
           res.status(201).json({ message: "Item Fetched", cartItems });
         }
-      }
+      
     }catch(err){
       console.log(err);
     }
