@@ -191,7 +191,7 @@ class CartController {
         if(userId!=null){
           const cartItems = await this.cart.find({userId:userId});
           // console.log(cartItems);
-          res.status(201).json({ message: "Item Fetched", cartItems });
+          res.status(200).json({ message: "Item Fetched", cartItems });
         }
       
     }catch(err){

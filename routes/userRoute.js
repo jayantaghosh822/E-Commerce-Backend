@@ -96,6 +96,7 @@ class UserRoutes{
         this.sendPasswordResetLink = (req,res) => this.userController.sendPasswordResetLink(req, res);
         this.resetPassByEmail = (req,res) => this.userController.resetPasswordByEmail(req, res);
         this.verifyEmail = (req,res) => this.userController.verifyEmailToken(req, res);
+        this.refreshToken = (req,res) => this.userController.getAccessToken(req, res);
         this.authsCheck = new authMiddleware();
         this.requireAuthCheck = (req,res,next) => this.authsCheck.requireSignIn(req, res , next);
         this.createRoutes();
@@ -111,6 +112,7 @@ class UserRoutes{
         this.router.post('/send-pasword-reset-link', this.sendPasswordResetLink);
         this.router.post('/reset-password', this.resetPassByEmail);
         this.router.get('/send-verification-email', this.sendEmailVerification);
+        this.router.get('/refresh-token', this.refreshToken);
     }
     getRoutes(){
         return this.router;

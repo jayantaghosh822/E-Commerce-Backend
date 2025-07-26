@@ -170,14 +170,19 @@ class UserController {
       }, process.env.TOKEN_SECRET, { expiresIn: '15m' });
     }
 
-    generateRefreshToken(userId) {
+    generateRefreshToken(userId , sessionId) {
         const refreshToken = JWT.sign({ 
-             _id: userId,
+             userId: userId,
+             sessionId: sessionId
             }, process.env.TOKEN_SECRET, {
             expiresIn: '7d'
         });
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         return { token: refreshToken, expiresAt };
+    }
+
+    generateSessionId() {
+        return crypto.randomBytes(12).toString('hex');
     }
 
     async userLogin(req, res){
@@ -217,11 +222,14 @@ class UserController {
 
                         const accessToken = this.generateAccessToken( user._id);
                         console.log(accessToken);
-                       
-                        const { token: refreshToken, expiresAt } = this.generateRefreshToken( user._id);
+                        const sessionId = this.generateSessionId();
+                        const { token: refreshToken, expiresAt } = this.generateRefreshToken( user._id , sessionId);
                         console.log('refreshToken',refreshToken);
+
+                       
                         await this.refreshToken.create({
                             userId: user._id,
+                            sessionId: sessionId,
                             token: refreshToken,
                             expiresAt
                         });
@@ -272,6 +280,86 @@ class UserController {
             return res.status(500).json({ success: false, error: "Internal server error" }); 
         } 
     };
+
+    async getAccessToken(req,res){
+        // console.log(req);
+        const token = req.cookies.refreshToken;
+        console.log(token);
+        if (!token) return res.status(401).json({ error: 'No refresh token provided' });
+
+        try {
+            const payload = JWT.verify(token, process.env.TOKEN_SECRET);
+            console.log(payload);
+            // return;
+            const { sessionId, userId } = payload;
+            console.log(sessionId);
+            console.log(userId);
+            const session = await this.refreshToken.findOne({ sessionId });
+            console.log(session);
+            if (!session || session.token !== token) {
+                // console.log(session.token);
+
+                console.log(token);
+                // Reuse detected or session not valid
+                if (session) {
+                    await this.refreshToken.deleteOne({ sessionId: sessionId }); // or findByIdAndDelete
+                    // console.log(sessiondelete);
+                }
+                res.clearCookie("refreshToken", {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "Lax",
+                });
+                
+                return res.status(403).json({ error: 'Refresh token reuse detected or invalid' });
+            }
+
+            // Rotate token: invalidate old, issue new
+            
+            const { token: refreshToken, expiresAt } = this.generateRefreshToken(userId,sessionId);
+
+           
+                       
+            await this.refreshToken.findOneAndUpdate(
+                { sessionId }, // find by sessionId
+                {
+                    sessionId,
+                    token: refreshToken,
+                    userId,
+                },
+                {
+                    upsert: false,           // create if not found
+                    new: true,              // return the updated document
+                    setDefaultsOnInsert: true, // apply defaults from schema if inserting
+                }
+            );
+
+            const accessToken = this.generateAccessToken( userId );
+           
+             res.cookie("accessToken", accessToken, {
+                httpOnly: true,     // Can't be accessed by JS 👈
+                secure: true,       // Only sent over HTTPS (use false in local dev)
+                sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
+                maxAge: 15 * 60 * 1000, // 15 mins
+            });
+
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,     // Can't be accessed by JS 👈
+                secure: true,       // Only sent over HTTPS (use false in local dev)
+                sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 1 day
+            });
+
+            return res.status(200).json({ message: 'Access token refreshed successfully' });
+
+
+        } catch (err) {
+            console.log(err);
+            return res.status(403).json({ error: 'Invalid or expired refresh token' });
+        }
+    }
+
+
     
     async userAuthGoogle(req, res) {
         try{
@@ -380,12 +468,43 @@ class UserController {
     }
 
     async userLogout(req, res){
-        res.clearCookie("token", {
-            httpOnly: true,
-            secure: true,
-            sameSite: "Lax",
-        });
-        res.status(200).json({ message: "Logged out" });
+
+        const token = req.cookies.refreshToken;
+        console.log(token);
+        if (!token) return res.status(401).json({ error: 'No refresh token provided' });
+        try {
+            const payload = JWT.verify(token, process.env.TOKEN_SECRET);
+            console.log(payload);
+            // return;
+            const { sessionId, userId } = payload;
+            console.log(sessionId);
+            console.log(userId);
+            const session = await this.refreshToken.findOne({ sessionId });
+            console.log(session);
+
+            console.log(token);
+            // Reuse detected or session not valid
+            if (session) {
+                await this.refreshToken.deleteOne({ sessionId: sessionId }); // or findByIdAndDelete
+                // console.log(sessiondelete);
+            }
+            
+            res.clearCookie("accessToken", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "Lax",
+            });
+            res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "Lax",
+            });
+            res.status(200).json({ message: "Logged out" });
+        }catch(err){
+            res.status(200).json({ message: "No User Data Found" });
+        }
+
+        
     }
 
     async getUserById(req,res){
