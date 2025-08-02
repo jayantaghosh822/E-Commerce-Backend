@@ -129,13 +129,16 @@ class CartController {
         const inserts = [];
 
         for (const localItem of unSavedCartItems) {
-          // Look for a matching item (same product & sizeId)
+          // Look for a matching item (same product & sizeId);
+          console.log(localItem.product);
+          console.log(localItem.metaData.sizeId);
           const match = savedCartItems.find(savedItem =>
             localItem.product === savedItem.product.toString() &&
-            localItem.sizeId === savedItem.sizeId?.toString()
+            localItem.metaData.sizeId === savedItem.metaData.sizeId?.toString()
           );
 
           if (match) {
+            console.log("match" , match);
             updates.push({
               _id: match._id,
               incrementBy: localItem.quan || 1
@@ -200,6 +203,75 @@ class CartController {
   }
 
 
+  async removeCartItem(req,res){
+    try{
+     
+      let userId = req.userId;
+      if(userId){
+        const {itemId} = req.query;
+        console.log(itemId);
+        console.log(userId);
+        if(itemId){
+          await this.cart.deleteOne({_id:itemId});
+          const cartItems = await this.cart.find({userId:userId});
+          
+          res.status(200).send({
+            success:true,
+            message:'Item Deleted',
+            cartItems
+          })
+        }
+      }
+    }catch(err){
+      console.log(err);
+      res.status(500).send({
+            success:false,
+            message:'server Error'
+      })
+    }
+    
+  }
+
+  async updateCartItem(req, res) {
+    try {
+      const userId = req.userId;
+      const itemId = req.params.itemId;
+      console.log
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      let updatedItem;
+
+      if (req.body.action === 'inc') {
+        updatedItem = await this.cart.findByIdAndUpdate(
+          itemId,
+          { $inc: { quan: 1 } },
+          { new: true }
+        );
+      } else if (req.body.action === 'dec') {
+        updatedItem = await this.cart.findByIdAndUpdate(
+          itemId,
+          { $inc: { quan: -1 } },
+          { new: true }
+        );
+
+        // If quantity becomes 0 or less, delete the item
+        if (updatedItem && updatedItem.quan <= 0) {
+          await this.cart.findByIdAndDelete(itemId);
+          const cartItems = await this.cart.find({userId:userId});
+          return res.json({ message: 'Item removed from cart' ,cartItems});
+        }
+      }
+
+      console.log(updatedItem);
+      const cartItems = await this.cart.find({userId:userId});
+      return res.json({ message: 'Cart item updated', cartItems });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+  }
 
 
 }
