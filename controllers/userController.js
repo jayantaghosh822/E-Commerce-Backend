@@ -131,20 +131,21 @@ class UserController {
         console.log(req.userId);
         if(userId){
             try{
-                const user = await this.user.findById(userId ,{displayname:1 , email:1 , role:1});
+                const user = await this.user.findById(userId ,{firstname:1 , lastname:1 , displayname:1 , email:1 , role:1});
                 let userType = 'customer';
-                if(user.role == 2){
+                if(user.role == 1){
                     userType = 'admin';
                 }
                 console.log(user);
                 return res.status(200).send({
                     success: true,
-                    "message":"User logged in",
+                    "message":"User logged inn",
                     user: {
-                        name:user.displayname,
+                        firstname:user.firstname,
+                        lastname:user.lastname,
+                        displayname:user.displayname,
                         email:user.email,
                         userType:userType
-
                     }
                 });
             }catch(err){
@@ -202,6 +203,8 @@ class UserController {
                         error: "This email is registered using Google authentication. Please log in using Google."
                     });
                 }
+                console.log(user);
+                console.log(userPass);
                 // Check if password matches
                 // const result = user_pass === my_user.password;
                 const isMatch = await bcrypt.compare(userPass, user.password);
