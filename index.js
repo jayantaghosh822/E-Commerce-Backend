@@ -13,14 +13,36 @@ const corsOptions = {
     credentials: true, 
     allowedHeaders: "Content-Type,Authorization",
 };
-
+const stripe = require("stripe")("sk_test_51LX0WLSBdfOGEPmAWrkusfIomBJ8uG9q02Lf3NJpPqPfO82lWHBicyPGvLpIIUQDCv4Nlb2vKeEKhPgylO7zsFV400shpQFWJ3");
 class Server {
     constructor() {
         this.app = express();
         this.app.use('/public', express.static('public'));
         // this.app.use('/img', express.static(path.join(__dirname, 'public/img')));
+        
+
+        // this.app.post('/api/v1/auth/payment-status-webhook', express.raw({ type: 'application/json' }),(request,res)=>{
+        //     console.log('request coming');
+        //     const sig = request.headers['stripe-signature'];
+        //     const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
+        //     // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
+        //     let event;
+        //     try {
+        //     event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+        //     } catch (err) {
+        //         console.log("erroer" , err);
+        //         response.status(400).send(`Webhook Error: ${err.message}`);
+        //         return;
+        //     }
+
+        //     console.log(event);
+        //     // return res.status(200).end(); // ✅ immediately respond to Stripe
+        // });
 
         this.app.use(express.json());
+
+        
+
         this.app.use(express.urlencoded({ extended: true }));
         this.port = 5000;
         this.databaseURI = process.env.MONGODB_URI;
@@ -55,6 +77,7 @@ class Server {
     // Routes
     routes() {
         const authRoutes = require("./routes/userRoute");
+        // console.log(authRoutes);
         this.app.use('/api/user', authRoutes); // Use user routes
         const categoryRoutes = require("./routes/categoryRoute");
         this.app.use('/api/', categoryRoutes); // Use category routes 
@@ -70,6 +93,9 @@ class Server {
 
         const cartRoutes = require("./routes/cartRoute");
         this.app.use('/api/', cartRoutes); // Use product routes 
+
+        const orderRoutes = require("./routes/orderRoute");
+        this.app.use('/api/', orderRoutes); // Use product routes
     }
 
     // Start Server

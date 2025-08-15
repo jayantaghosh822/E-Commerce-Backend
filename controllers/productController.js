@@ -8,6 +8,7 @@ var slugify = require('slugify');
 // const Grid = require('gridfs-stream');
 
 const productModel = require('../models/productModel.js');
+const productVariationModel = require('../models/productVariationModel.js');
 // var formidable = require('formidable');
 const categoryModel = require('../models/categoryModel.js');
 const brandModel = require('../models/brandModel.js');
@@ -32,6 +33,7 @@ class ProductController {
         // this.token = tokenModel.Token;
 
         this.product = productModel.Product;
+        this.productVariation = productVariationModel.ProductVariation;
 
         this.category = categoryModel.Category;
 
@@ -46,177 +48,261 @@ class ProductController {
     }
 
     // User Registration Method
-    async saveProduct(req, res) {
-        // try{
-        //     console.log(req.files.pimage[0].path);
-        //     const imageUploadResult = await cloudinary.uploader.upload(
-        //         req.files.pimage[0].path,
-        //         {
-        //             public_id: `product_image_${Date.now()}`,
-        //             resource_type: 'image' // Ensure it's treated as an image
-        //         }
-        //     );
-        //     console.log(imageUploadResult);
-           
-        // }catch(err){
-        //     console.log(err);
-        // }
-        // return;
-        const productImage = req.files.pimage ? req.files.pimage : null;
-        const productGalleryImage = req.files.pimage ? req.files.pgalleryimage : null;
-        let productImagePath;
-        let productGalleryImagePath;
-        const hostUrl = `${req.protocol}://${req.get('host')}`;
-        if(productImage){
-            productImagePath = productImage.map((ele)=>{
-                return ele.path;
-            });
+    // async saveProduct(req, res) {
+       
+    //     const productImage = req.files.pimage ? req.files.pimage : null;
+    //     const productGalleryImage = req.files.pimage ? req.files.pgalleryimage : null;
+    //     let productImagePath;
+    //     let productGalleryImagePath;
+    //     const hostUrl = `${req.protocol}://${req.get('host')}`;
+    //     if(productImage){
+    //         productImagePath = productImage.map((ele)=>{
+    //             return ele.path;
+    //         });
             
         
-        // console.log("uploadResult",uploadResult);
-        }
-        if(productGalleryImage){
-            productGalleryImagePath = productGalleryImage.map((ele)=>{
-                return ele.path;
-            });
-        }
+    //     // console.log("uploadResult",uploadResult);
+    //     }
+    //     if(productGalleryImage){
+    //         productGalleryImagePath = productGalleryImage.map((ele)=>{
+    //             return ele.path;
+    //         });
+    //     }
        
-        try {
-            // console.log("Received Data:", req.body);
+    //     try {
+    //         // console.log("Received Data:", req.body);
             
     
-            const { pname, pslug, pdescription, pcategoryid, psize , pcolorid , pbrandid } = req.body;
+    //         const { pname, pslug, pdescription, pcategoryid, psize , pcolorid , pbrandid } = req.body;
              
-            // Ensure an image is uploaded
+    //         // Ensure an image is uploaded
            
-            console.log(productImagePath);
-            if(productImagePath){
-                productImagePath = productImagePath[0];
-            }
+    //         console.log(productImagePath);
+    //         if(productImagePath){
+    //             productImagePath = productImagePath[0];
+    //         }
             
-            console.log(productImagePath);
-            let name;
-            let slug;
-            let description;
-            let category;
-            let color;
-            let brand;
-            let size;
-            let image;
+    //         console.log(productImagePath);
+    //         let name;
+    //         let slug;
+    //         let description;
+    //         let category;
+    //         let color;
+    //         let brand;
+    //         let size;
+    //         let image;
 
-            if(!pname || !pslug || !pdescription || !pcategoryid || !pcolorid || !pbrandid || !productImagePath){
-                // console.error("Error saving product:", error);
-                if (productImagePath) {
-                    // Delete uploaded file if validation fails
-                    const fs = require("fs");
-                    fs.unlinkSync(productImagePath);
-                }
+    //         if(!pname || !pslug || !pdescription || !pcategoryid || !pcolorid || !pbrandid || !productImagePath){
+    //             // console.error("Error saving product:", error);
+    //             if (productImagePath) {
+    //                 // Delete uploaded file if validation fails
+    //                 const fs = require("fs");
+    //                 fs.unlinkSync(productImagePath);
+    //             }
 
-                if(productGalleryImagePath){
-                    productGalleryImagePath.forEach(element => {
-                        const fs = require("fs");
-                        fs.unlinkSync(element);
-                    });
-                }
+    //             if(productGalleryImagePath){
+    //                 productGalleryImagePath.forEach(element => {
+    //                     const fs = require("fs");
+    //                     fs.unlinkSync(element);
+    //                 });
+    //             }
 
-                return res.status(400).json({
-                    success: false,
-                    message: "Please Fill The Required Fields",
-                    // categories,
-                });
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: "Please Fill The Required Fields",
+    //                 // categories,
+    //             });
 
-            }
-            name = pname;
-            slug = pslug;
-            description = pdescription;
-            category = pcategoryid;
-            size = psize;
-            color = pcolorid;
-            brand = pbrandid;
-            image = productImagePath;
-            // Save product data
-            const product = new this.product({
-                name,
-                slug, 
-                description, 
-                category, 
-                size,
-                brand,
-                color,
-                // image, // Save image path in DB
-            });
+    //         }
+    //         name = pname;
+    //         slug = pslug;
+    //         description = pdescription;
+    //         category = pcategoryid;
+    //         size = psize;
+    //         color = pcolorid;
+    //         brand = pbrandid;
+    //         image = productImagePath;
+    //         // Save product data
+    //         const product = new this.product({
+    //             name,
+    //             slug, 
+    //             description, 
+    //             category, 
+    //             size,
+    //             brand,
+    //             color,
+    //             // image, // Save image path in DB
+    //         });
             
             
-            // return;
-            let productSaved = await product.save();
-            if(productSaved){
-                if(productImagePath || productGalleryImagePath){
-                    try {
-                        const imageUploadResult = await cloudinary.uploader.upload(
-                            productImagePath,
-                            {
-                                public_id: 'product_image',
-                                resource_type: 'image' // Ensure it's treated as an image
-                            }
-                        );
-                        let singleProductImage = '';
-                        let galleryProductImage = [];
-                        if(imageUploadResult){
-                            singleProductImage = imageUploadResult.url;
-                        }
+    //         // return;
+    //         let productSaved = await product.save();
+    //         if(productSaved){
+    //             if(productImagePath || productGalleryImagePath){
+    //                 try {
+    //                     const imageUploadResult = await cloudinary.uploader.upload(
+    //                         productImagePath,
+    //                         {
+    //                             public_id: 'product_image',
+    //                             resource_type: 'image' // Ensure it's treated as an image
+    //                         }
+    //                     );
+    //                     let singleProductImage = '';
+    //                     let galleryProductImage = [];
+    //                     if(imageUploadResult){
+    //                         singleProductImage = imageUploadResult.url;
+    //                     }
                         
-                        const galleryUploadPromises = productGalleryImagePath.map(async (element, index) => {
-                            const galleryImageResult = await cloudinary.uploader.upload(
-                                element,
-                                {
-                                    public_id: `product_gallery_${index}_${Date.now()}`, // Unique public_id for each image
-                                    resource_type: 'image'
-                                }
-                            );
-                            return galleryImageResult.url;
-                        });
+    //                     const galleryUploadPromises = productGalleryImagePath.map(async (element, index) => {
+    //                         const galleryImageResult = await cloudinary.uploader.upload(
+    //                             element,
+    //                             {
+    //                                 public_id: `product_gallery_${index}_${Date.now()}`, // Unique public_id for each image
+    //                                 resource_type: 'image'
+    //                             }
+    //                         );
+    //                         return galleryImageResult.url;
+    //                     });
                     
-                        // Wait for all uploads to complete
-                        const galleryImageUrls = await Promise.all(galleryUploadPromises);
-                        galleryProductImage.push(...galleryImageUrls);
+    //                     // Wait for all uploads to complete
+    //                     const galleryImageUrls = await Promise.all(galleryUploadPromises);
+    //                     galleryProductImage.push(...galleryImageUrls);
 
-                        // console.log("After all images:", galleryImage);
-                        const productImage = new this.productImages({
-                            product: productSaved._id,
-                            mainImage:singleProductImage,
-                            galleryImages:galleryProductImage
-                            // image, // Save image path in DB
-                        });
+    //                     // console.log("After all images:", galleryImage);
+    //                     const productImage = new this.productImages({
+    //                         product: productSaved._id,
+    //                         mainImage:singleProductImage,
+    //                         galleryImages:galleryProductImage
+    //                         // image, // Save image path in DB
+    //                     });
                 
-                        await productImage.save();
-                        // console.log("Upload Result:", uploadResult);
-                    } catch (error) {
-                        console.error("Upload Error:", error);
-                    }
+    //                     await productImage.save();
+    //                     // console.log("Upload Result:", uploadResult);
+    //                 } catch (error) {
+    //                     console.error("Upload Error:", error);
+    //                 }
                     
 
                 
-            }
-            }
+    //         }
+    //         }
             
-            res.status(201).json({ message: "Product saved successfully", product });
-        } catch (error) {
-            if (productImagePath) {
-                // Delete uploaded file if validation fails
-                const fs = require("fs");
-                fs.unlinkSync(productImagePath);
+    //         res.status(201).json({ message: "Product saved successfully", product });
+    //     } catch (error) {
+    //         if (productImagePath) {
+    //             // Delete uploaded file if validation fails
+    //             const fs = require("fs");
+    //             fs.unlinkSync(productImagePath);
+    //         }
+    //         if(productGalleryImagePath){
+    //             productGalleryImagePath.forEach(element => {
+    //                 const fs = require("fs");
+    //                 fs.unlinkSync(element);
+    //             });
+    //         }
+    //         console.error("Error saving product:", error);
+    //         res.status(500).json({ message: "Internal Server Error", error });
+    //     }
+    // }
+    
+    async saveProduct(req, res) {
+        const fs = require("fs");
+        const cloudinary = require("cloudinary").v2;
+
+        try {
+            const productImageFiles = req.files.pimage || [];
+            const productGalleryFiles = req.files.pgalleryimage || [];
+            const hostUrl = `${req.protocol}://${req.get('host')}`;
+            // console.log(req.body);
+            // return;
+            // Extract fields from request
+            const { pname, pslug, pdescription, pcategoryid, pcolorid ,pbrandid, attributes, variations } = req.body;
+
+            if (!pname || !pslug || !pdescription || !pcategoryid || !pcolorid || !pbrandid || !productImageFiles.length) {
+                // Delete uploaded files if validation fails
+                [...productImageFiles, ...productGalleryFiles].forEach(file => fs.unlinkSync(file.path));
+                return res.status(400).json({ success: false, message: "Please fill all required fields" });
             }
-            if(productGalleryImagePath){
-                productGalleryImagePath.forEach(element => {
-                    const fs = require("fs");
-                    fs.unlinkSync(element);
+
+            // Upload main product image to Cloudinary
+            let mainImageUrl = '';
+            if (productImageFiles.length) {
+                const uploadResult = await cloudinary.uploader.upload(productImageFiles[0].path, {
+                    public_id: `product_${Date.now()}`,
+                    resource_type: 'image'
                 });
+                mainImageUrl = uploadResult.url;
             }
+
+            // Upload gallery images
+            let galleryImageUrls = [];
+            if (productGalleryFiles.length) {
+                const galleryUploads = productGalleryFiles.map((file, index) =>
+                    cloudinary.uploader.upload(file.path, {
+                        public_id: `product_gallery_${index}_${Date.now()}`,
+                        resource_type: 'image'
+                    })
+                );
+                const results = await Promise.all(galleryUploads);
+                galleryImageUrls = results.map(r => r.url);
+            }
+
+            // Create product document
+            const product = new this.product({
+                name: pname,
+                slug: pslug,
+                description: pdescription,
+                category: pcategoryid,
+                color: pcolorid,
+                brand: pbrandid,
+                image: mainImageUrl,
+                attributes: JSON.parse(attributes || "[]"), // [{name: "size", values: ["S","M"]}, ...]
+                isActive: true
+            });
+            // console.log(product);
+            // return;
+            const savedProduct = await product.save();
+
+            // Save product gallery images if any
+            if (galleryImageUrls.length) {
+                const productImages = new this.productImages({
+                    product: savedProduct._id,
+                    mainImage: mainImageUrl,
+                    galleryImages: galleryImageUrls
+                });
+                await productImages.save();
+            }
+
+            // Save variations
+            if (variations) {
+                const parsedVariations = JSON.parse(variations); 
+                // Example format: 
+                // [{attributes: {size:"M", color:"Red"}, price:499, stock:10, sku:"TSHIRT-M-RED", images: []}, ...]
+                const variationDocs = parsedVariations.map(v => ({
+                    product: savedProduct._id,
+                    attributes: v.attributes,
+                    price: v.price,
+                    stock: v.stock || 0,
+                    sku: v.sku,
+                    images: v.images || []
+                }));
+                await this.productVariation.insertMany(variationDocs);
+            }
+
+            // Cleanup uploaded files from server
+            [...productImageFiles, ...productGalleryFiles].forEach(file => fs.unlinkSync(file.path));
+
+            res.status(201).json({ message: "Product saved successfully", product: savedProduct });
+        } catch (error) {
             console.error("Error saving product:", error);
+            // Cleanup uploaded files
+            (req.files.pimage || []).concat(req.files.pgalleryimage || []).forEach(file => {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            });
             res.status(500).json({ message: "Internal Server Error", error });
         }
     }
-    
+
 
     async allProducts(req,res){
         const all_products = await product.find();
@@ -654,230 +740,81 @@ class ProductController {
      
     }
   
-    async filterProducts(req,res){
-        try{
-        console.time('API Time');
-        // console.log(req.query);
-        // return;
-        const cat = req.query.cat || null;
-        let catId = null;
-        if(cat){
-            const catObj = await this.category.findOne({slug:cat});
-            // console.log(catObj);
-            if(catObj){
-             catId = catObj._id;
+    async filterProducts(req, res) {
+        try {
+            const { cat, page = 1, limit = 10 } = req.query;
+            const skip = (page - 1) * limit;
+            let categoryId = '';
+            const category = await this.category.findOne({ slug: cat }, { _id: 1 });
+            if(category){
+                categoryId = category._id.toString();
             }
+            console.log(categoryId);
            
-        }
-        // return;
-        const prices = req.query.prices || [];
-        // console.log(prices);
-        let pricesToFilter = prices.map((ele)=>{
-            return ele.split('-');
-        });
-        // console.log(pricesToFilter);
-        pricesToFilter = pricesToFilter.flat();
-        // console.log("prices",pricesToFilter);
-        let maxPrice = 0;
-        let minPrice = 0;
-        if(pricesToFilter){
-            maxPrice = Math.max(...pricesToFilter);
-            minPrice = Math.min(...pricesToFilter);
-        }
         
-        // console.log(maxPrice , minPrice);
-       
-        const brands = req.query.brands || [];
-        // console.log(brands);
-        const colors = req.query.colors || [];
-        // console.log(colors);
-        const sizes = req.query.sizes || [];
-
-        const currentPage = req.query.currentPage || 1;
-        
-        const limit = 3;                      // always 3 items per page
-        const startIndex = limit*(currentPage-1)
-        const endIndex = (currentPage) * limit; // correct skip formula
-
-        const filter = {};
-
-        if(catId!=null){
-            filter.category = {$in:catId};
-        }
-        if (brands && brands.length > 0) {
-            filter.brand = { $in: brands };
-        }
-
-        if (colors && colors.length > 0) {
-        filter.color = { $in: colors };
-        }
-
-        if (sizes && sizes.length > 0) {
-            filter['size.size'] = { $in: sizes };
-        }
-
-      
-
-        if (maxPrice>0 && minPrice>0) {
-            filter['size'] = { 
-                $elemMatch: {
-                    price: { $gte: minPrice, $lte: maxPrice } // <-- flipped
-                } 
-            };
-        }
-
-     
-
-        // console.log(filter);
-       
-        // console.log(startIndex);
-        // console.log(endIndex);
-       
-        let queryFilteredProducts = await this.product.find(
-            filter,
-            { "name": 1, "size": 1 }
-        )
-        .populate('images')
-        .populate('color')
-        .populate('brand');
-
-        // console.log(queryFilteredProducts);
-        const allProductsInCategory = await this.product.find({ category: catId }, { brand: 1, color: 1, size: 1 }).populate('brand').populate('color');
-        
-       
-
-
-        //collecting brands for the querid products start
-        const brandsFromProducts = allProductsInCategory.map((pro)=>{
-            return pro.brand;
-        });
-        const uniqueBrands = [];
-
-        const brandsSeen = new Set();
-
-        brandsFromProducts.forEach(brand => {
-        const idStr = brand._id.toString();
-        if (!brandsSeen.has(idStr)) {
-            brandsSeen.add(idStr);
-            uniqueBrands.push(brand);
-        }
-        });
-        //collecting brands for the querid products end
-
-
-        //collecting highest and lowest price for the querid products start
-
-        // const lowestPriceProduct = await this.product.aggregate([
-        //     { $unwind: "$size" },
-        //     {
-        //         $project: {
-        //           _id: 1,         // keep product _id
-        //           size: 1         // keep size object
-        //         }
-        //     },
-        //     { $sort: { "size.price": 1 } },
-        //     { $limit: 1 }
-        // ]);
-      
-        
-        // const highestPriceProduct =  await this.product.aggregate([
-        //     { $unwind: "$size" },
-        //     {
-        //         $project: {
-        //           _id: 1,         // keep product _id
-        //           size: 1         // keep size object
-        //         }
-        //     },
-        //     { $sort: { "size.price": -1 } },
-        //     // { $limit: 1 }
             
-        // ]);
-        // let highestPrice = 0;
-        // let lowestPrice = 0;
-        // highestPrice = highestPriceProduct[0].size.price;
-        // lowestPrice = lowestPriceProduct[0].size.price; 
-
-         //chatgpt
-         const allSizes = allProductsInCategory.flatMap(product => 
-            product.size.map(size => ({
-              productId: product._id,
-              price: size.price,
-              sizeInfo: size,
-            }))
-          );
-          
-          // Find the lowest and highest price
-          const lowestPriceProductchat = allSizes.reduce((min, current) => current.price < min.price ? current : min, allSizes[0]);
-          const highestPriceProductchat = allSizes.reduce((max, current) => current.price > max.price ? current : max, allSizes[0]);
-          console.log(lowestPriceProductchat);
-          console.log(highestPriceProductchat);
-
-            let highestPrice = 0;
-            let lowestPrice = 0;
-
-            if(lowestPriceProductchat){
-            lowestPrice = highestPriceProductchat.sizeInfo.price;
-            }
-            if(highestPriceProductchat){
-            highestPrice = lowestPriceProductchat.sizeInfo.price;
-            }
-           
-
-        //chatgpt
-
-        //collecting highest and lowest price for the querid products end
+            // 1. Get all active products for the category
+            const products = await this.product.find({ category: categoryId, isActive: true })
+            .populate('brand', 'name')
+            .populate('color', 'name')
+            .populate('images')
+            .lean();
 
 
-        //collecting sizes for the querid products start
-        const sizesFromProducts = allProductsInCategory.map((pro)=>{
-            return pro.size;
-        });
-        const flattenedSizes = sizesFromProducts.flat();
-        const uniqueSizes = [];
-        const seenSizes = new Set();
+            console.log(products);
+            // 2. Fetch variations for all products
+            
+            const productIds = products.map((item)=>{
+                return item._id.toString();
+            })
+            const colors = products.map((item)=>{
+                return item.color;
+            });
+            const brands = products.map((item)=>{
+                return item.brand;
+            });
 
-        for (const item of flattenedSizes) {
-        if (!seenSizes.has(item.size)) {
-            seenSizes.add(item.size);
-            uniqueSizes.push(item);
-        }
-        }
-        //collecting sizes for the querid products end
+            console.log(productIds);
+            console.log(colors);
+            console.log(brands);
 
-        //collecting sizes for the querid products start
-        const colorsFromProducts = allProductsInCategory.map((pro)=>{
-            return pro.color;
-        });
-        const uniqueColors = [];
-
-        const colorsSeen = new Set();
-
-        colorsFromProducts.forEach(color => {
-            const idStr = color._id.toString();
-            if (!colorsSeen.has(idStr)) {
-                colorsSeen.add(idStr);
-                uniqueColors.push(color);
-            }
-        });
-        //collecting sizes for the querid products end
-
-        const paginatedProducts = queryFilteredProducts.slice(startIndex , endIndex);
-        // console.log(paginatedProducts);
-        // return;
-        console.timeEnd('API Time');
-        res.status(200).json({ message: 'Product Found successfully', products: paginatedProducts ,currentPage: currentPage, total_products:queryFilteredProducts.length,
-            colors:uniqueColors,
-            brands:uniqueBrands,
-            sizes:uniqueSizes,
+            const variations = await this.productVariation.find({
+                product:{$in:productIds}
+            });
+            console.log(variations);
+            const sizes = variations.map(v => v.attributes.get('size'));
+            const prices = variations.map(v => v.price);
+            console.log(prices);
+            const lowestPrice = Math.min(...prices);
+            const highestPrice = Math.max(...prices);
+            console.log(sizes);
+            // return;
+            const pageNum = parseInt(page);
+            const limitNum = parseInt(limit);
+            const totalProducts = products.length;
+            const totalPages = Math.ceil(products / limitNum);
+            const startIndex = (pageNum - 1) * limitNum;
+            const paginatedProducts = products.slice(startIndex, startIndex + limitNum);
+            // 5. Send response
+            res.status(200).json({
+            message: 'Products found successfully',
+            products: paginatedProducts,
+            currentPage: parseInt(page),
+            totalProducts: totalProducts,
+            colors: colors,
+            brands: brands,
+            sizes: sizes,
             lowestPrice: lowestPrice,
             highestPrice: highestPrice,
-            totalPages: Math.ceil(queryFilteredProducts.length / limit) });
-        } catch (error) {
-            console.error('Error filtering color variants:', error);
-            return;
-            // throw error;
+            totalPages: totalPages
+            });
+
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Server Error' });
         }
     }
+
     
     
 
