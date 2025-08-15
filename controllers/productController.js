@@ -740,80 +740,96 @@ class ProductController {
      
     }
   
-    async filterProducts(req, res) {
-        try {
-            const { cat, page = 1, limit = 10 } = req.query;
-            const skip = (page - 1) * limit;
-            let categoryId = '';
-            const category = await this.category.findOne({ slug: cat }, { _id: 1 });
-            if(category){
-                categoryId = category._id.toString();
-            }
-            console.log(categoryId);
-           
-        
-            
-            // 1. Get all active products for the category
-            const products = await this.product.find({ category: categoryId, isActive: true })
+   async filterProducts(req, res) {
+    try {
+        const { cat, page = 1, limit = 10 } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+
+        // 1. Find category
+        const category = await this.category.findOne({ slug: cat }, { _id: 1 });
+        if (!category) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        // 2. Get products
+        const products = await this.product.find({ category: category._id, isActive: true })
             .populate('brand', 'name')
             .populate('color', 'name')
             .populate('images')
             .lean();
 
+        if (!products.length) {
+            return res.status(200).json({ message: 'No products found', products: [] });
+        }
 
-            console.log(products);
-            // 2. Fetch variations for all products
-            
-            const productIds = products.map((item)=>{
-                return item._id.toString();
-            })
-            const colors = products.map((item)=>{
-                return item.color;
-            });
-            const brands = products.map((item)=>{
-                return item.brand;
-            });
+        const productIds = products.map(p => p._id);
 
-            console.log(productIds);
-            console.log(colors);
-            console.log(brands);
+        // Sets for unique values
+        const colorsSet = new Set();
+        const brandsSet = new Set();
 
-            const variations = await this.productVariation.find({
-                product:{$in:productIds}
-            });
-            console.log(variations);
-            const sizes = variations.map(v => v.attributes.get('size'));
-            const prices = variations.map(v => v.price);
-            console.log(prices);
-            const lowestPrice = Math.min(...prices);
-            const highestPrice = Math.max(...prices);
-            console.log(sizes);
-            // return;
-            const pageNum = parseInt(page);
-            const limitNum = parseInt(limit);
-            const totalProducts = products.length;
-            const totalPages = Math.ceil(products / limitNum);
-            const startIndex = (pageNum - 1) * limitNum;
-            const paginatedProducts = products.slice(startIndex, startIndex + limitNum);
-            // 5. Send response
-            res.status(200).json({
+        products.forEach(p => {
+            if (p.color) colorsSet.add(p.color.name || p.color);
+            if (p.brand) brandsSet.add(p.brand.name || p.brand);
+        });
+
+        // 3. Aggregate variations for lowest & highest price and sizes
+        const variationsAgg = await this.productVariation.aggregate([
+            { $match: { product: { $in: productIds } } },
+            {
+                $group: {
+                    _id: "$product",
+                    lowestPrice: { $min: "$price" },
+                    highestPrice: { $max: "$price" },
+                    sizes: { $addToSet: "$attributes.size" }
+                }
+            }
+        ]);
+
+        const variationMap = {};
+        let globalLowestPrice = Infinity;
+        let globalHighestPrice = 0;
+        const sizesSet = new Set();
+
+        variationsAgg.forEach(v => {
+            variationMap[v._id.toString()] = v;
+            v.sizes.forEach(size => sizesSet.add(size));
+            if (v.lowestPrice < globalLowestPrice) globalLowestPrice = v.lowestPrice;
+            if (v.highestPrice > globalHighestPrice) globalHighestPrice = v.highestPrice;
+        });
+
+        // 4. Attach price to products
+        const productsWithPrice = products.map(p => ({
+            ...p,
+            lowestPrice: variationMap[p._id.toString()]?.lowestPrice || 0
+        }));
+
+        // 5. Pagination
+        const totalProducts = productsWithPrice.length;
+        const totalPages = Math.ceil(totalProducts / limitNum);
+        const paginatedProducts = productsWithPrice.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+
+        // 6. Response
+        res.status(200).json({
             message: 'Products found successfully',
             products: paginatedProducts,
-            currentPage: parseInt(page),
-            totalProducts: totalProducts,
-            colors: colors,
-            brands: brands,
-            sizes: sizes,
-            lowestPrice: lowestPrice,
-            highestPrice: highestPrice,
-            totalPages: totalPages
-            });
+            currentPage: pageNum,
+            totalProducts,
+            colors: Array.from(colorsSet),
+            brands: Array.from(brandsSet),
+            sizes: Array.from(sizesSet),
+            lowestPrice: globalLowestPrice === Infinity ? 0 : globalLowestPrice,
+            highestPrice: globalHighestPrice,
+            totalPages
+        });
 
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ message: 'Server Error' });
-        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
     }
+    }
+
 
     
     
