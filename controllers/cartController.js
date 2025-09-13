@@ -8,6 +8,8 @@ var slugify = require('slugify');
 // const Grid = require('gridfs-stream');
 const JWT = require('jsonwebtoken');
 const productModel = require('../models/productModel.js');
+
+const productVariationModel = require('../models/productVariationModel.js');
 // var formidable = require('formidable');
 const categoryModel = require('../models/categoryModel.js');
 const brandModel = require('../models/brandModel.js');
@@ -32,6 +34,7 @@ class CartController {
         // this.token = tokenModel.Token;
 
         this.product = productModel.Product;
+        this.productVariation = productVariationModel.ProductVariation;
 
         this.category = categoryModel.Category;
 
@@ -131,10 +134,10 @@ class CartController {
         for (const localItem of unSavedCartItems) {
           // Look for a matching item (same product & sizeId);
           console.log(localItem.product);
-          console.log(localItem.metaData.sizeId);
+          console.log(localItem.variationId);
           const match = savedCartItems.find(savedItem =>
-            localItem.product === savedItem.product.toString() &&
-            localItem.metaData.sizeId === savedItem.metaData.sizeId?.toString()
+            localItem.productId === savedItem.productId.toString() &&
+            localItem.variationId === savedItem.variationId?.toString()
           );
 
           if (match) {
@@ -145,10 +148,10 @@ class CartController {
             });
           } else {
             inserts.push({
-              product: new mongoose.Types.ObjectId(localItem.product),
+              productId: new mongoose.Types.ObjectId(localItem.productId),
               userId: new mongoose.Types.ObjectId(userId),
               quan: localItem.quan || 1,
-              metaData: localItem.metaData || {},
+              variationId: localItem.metaData || {},
               price: localItem.price || 0,
               image: localItem.image || ''
             });
@@ -177,6 +180,35 @@ class CartController {
 
 
 
+  async cartData(req, res) {
+      try {
+        const items = (req.body.cart.items);
+        const variationIds = items.map(item => item.variationId);
+        console.log(variationIds);
+        // return;
+        // Get latest variation details + product info
+        const variations = await this.productVariation
+        .find({ _id: { $in: variationIds } })
+        .populate("product", "name image");
+
+        const cartWithDetails = items.map((cartItem) => {
+          const variation = variations.find(
+            (v) => v._id.toString() === cartItem.variationId
+          );
+
+          return {
+            variation,        // full variation doc (price, stock, attributes, etc.)
+            quan: cartItem.quan, // quantity from cart
+          };
+        });
+        // console.log(cartWithDetails);
+        // return;
+        res.json(cartWithDetails);
+        }catch (error) {
+          console.error("Error adding local cart items:", error);
+          return res.status(500).json({ message: "Failed to add items", error });
+        }
+  }
 
 
   async cartItems(req, res) {

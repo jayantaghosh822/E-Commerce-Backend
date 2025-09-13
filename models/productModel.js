@@ -55,6 +55,12 @@ ProductSchema.virtual('images', {
     foreignField: 'product',
     justOne: true
 });
+ProductSchema.virtual('variations', {
+    ref: 'ProductVariation',
+    localField: '_id',
+    foreignField: 'product',
+    justOne: false
+});
 
 ProductSchema.set('toObject', { virtuals: true });
 ProductSchema.set('toJSON', { virtuals: true });

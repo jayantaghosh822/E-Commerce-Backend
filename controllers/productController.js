@@ -354,49 +354,28 @@ class ProductController {
     }
 
     async getProductBySlug (req, res){
-        console.log('slug', req.params.slug);
-        let pro_slug = req.params.slug;
-        let pro_id = '';
-        const imageDataArray = [];
-        let size_pro_find = {};
-        try {
-            const pro = await product.findOne({ slug: pro_slug });
-            
-            if (!pro) {
-                return res.status(404).send('Product not found');
+        const { slug } = req.params;  // ✅ destructuring
+        console.log("slug:", slug);
+         // console.log(req);
+        try{
+            const proId = req.query.proId;
+            const getProduct = await this.product.findOne({slug:slug})
+            .populate('images').populate('variations');
+            console.log(getProduct);
+            if(getProduct){
+                const slugs = await this.categoryController.getCategoryPath(getProduct.category);
+                const productObj = getProduct.toObject(); // ✅ Important fix
+                productObj['categorypath'] = slugs;
+                return res.status(200).send({
+                    success:true,
+                    result:productObj
+                })
             }
-            
-            pro_id = pro._id;
-            // console.log(pro_id);
-            
-            if (pro_id !== "") {
-                const productvarImages = await productImages.find({ product: { $in: pro_id } }).select("photo");
-                
-                console.log('productimages', productvarImages);
-                
-                // Iterate over the products and extract photo data
-                productvarImages.forEach(product => {
-                    
-                    imageDataArray.push(product);
-                });
-                 size_pro_find = await product_size_variants.find({ product: pro_id }).select('size')
-                 .populate({
-                     path: 'size', // field to populate
-                     select: 'name', // only select the _id field of the Size document
-                 });
-                if(size_pro_find){
-                    console.log(size_pro_find);
-                }
-            }
-            const responseData = {
-                product: pro,
-                images: imageDataArray,
-                sizes: size_pro_find
-            };
-            return res.status(200).send(responseData);
-        } catch (err) {
-            console.log(err);
-            return res.status(500).send('Internal Server Error');
+        }catch(err){
+                return res.status(500).send({
+                    success:false,
+                    result:err
+                })
         }
     }
     
