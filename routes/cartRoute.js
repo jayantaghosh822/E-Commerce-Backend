@@ -23,6 +23,7 @@ class CartRoutes{
         this.addItemToCart = (req,res)=>this.CartController.addToCart(req,res);
         this.cartItems = (req,res)=>this.CartController.cartItems(req,res);
         this.cartData = (req,res)=>this.CartController.cartData(req,res);
+        this.userCartData = (req,res)=>this.CartController.userCartData(req,res);
         this.addLocalItems = (req,res)=>this.CartController.addLocalItems(req,res);
         this.removeCartItem = (req,res)=>this.CartController.removeCartItem(req,res);
         this.updateCartItem = (req,res)=>this.CartController.updateCartItem(req,res);
@@ -35,6 +36,7 @@ class CartRoutes{
       this.router.post('/add-to-cart',this.requireAuthCheck, this.addItemToCart);
       this.router.get('/get-cart-items',this.requireAuthCheck, this.cartItems);
       this.router.post('/get-cart-data', this.cartData);
+      this.router.post('/get-user-cart-data',this.requireAuthCheck, this.userCartData);
       this.router.post('/add-local-items-to-cart',this.requireAuthCheck, this.addLocalItems);
       this.router.delete('/remove-cart-item', this.requireAuthCheck , this.removeCartItem);
       this.router.patch('/update-item/:itemId',this.requireAuthCheck, this.updateCartItem);

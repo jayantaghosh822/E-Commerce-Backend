@@ -15,8 +15,8 @@ const variationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-// variationSchema.set('toJSON', { getters: true });
-// variationSchema.set('toObject', { getters: true });
+variationSchema.set('toJSON', { getters: true });
+variationSchema.set('toObject', { getters: true });
 
 const ProductVariation = mongoose.model('ProductVariation',variationSchema);
 

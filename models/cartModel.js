@@ -2,31 +2,34 @@ const mongoose = require('mongoose');
 
 const CartSchema = new mongoose.Schema(
   {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', // assuming a User model exists
+      ref: 'User',
       required: true,
     },
-    quan: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    price: {
-      type: Number, // optional: snapshot of price at time of adding
-    },
-    image: {
-      type: String, // optional: for UI display
-    },
-    metaData: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {},
-    },
+    items: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Product',
+          required: true,
+        },
+        variationId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'ProductVariation', // assuming you have a Variation model
+          required: true,
+        },
+        quan: {
+          type: Number,
+          required: true,
+          min: 1,
+        },
+        metaData: {
+          type: mongoose.Schema.Types.Mixed,
+          default: {},
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
