@@ -136,14 +136,14 @@ class UserController {
                 if(user.role == 1){
                     userType = 'admin';
                 }
-                console.log(user);
+                console.log("me user",user);
                 return res.status(200).send({
                     success: true,
                     "message":"User logged inn",
                     user: {
                         firstname:user.firstname,
                         lastname:user.lastname,
-                        displayname:user.displayname,
+                        displayname:user.firstname,
                         email:user.email,
                         userType:userType
                     }
@@ -263,7 +263,7 @@ class UserController {
                             success: true,
                             message: "User logged in",
                             user: {
-                                name: user.displayname || 'N/A', // Provide default values if fields are undefined
+                                displayname: user.firstname || 'N/A', // Provide default values if fields are undefined
                                 email: user.email || 'N/A',
                                 userType: userType
                             },
@@ -405,24 +405,45 @@ class UserController {
                     console.log(newUser);
                     if(newUser){
                         try {
-                            const token = JWT.sign({ 
-                                _id: newUser._id,
-                                email: newUser.email,
-                                name: newUser.displayname,
-                                userType: 'customer'
-                                }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+                        const accessToken = this.generateAccessToken( user._id);
+                        console.log(accessToken);
+                        const sessionId = this.generateSessionId();
+                        const { token: refreshToken, expiresAt } = this.generateRefreshToken( newUser._id , sessionId);
+                        console.log('refreshToken',refreshToken);
 
-                            res.cookie("token", token, {
-                                httpOnly: true,     // Can't be accessed by JS 👈
-                                secure: true,       // Only sent over HTTPS (use false in local dev)
-                                sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
-                                maxAge: 24 * 60 * 60 * 1000, // 1 day
-                            });
+                       
+                        await this.refreshToken.create({
+                            userId: newUser._id,
+                            sessionId: sessionId,
+                            token: refreshToken,
+                            expiresAt
+                        });
+                        // const token = JWT.sign({ 
+                        // _id: my_user._id,
+                        // email: my_user.email,
+                        // name: my_user.displayname,
+                        // userType: userType
+                        // }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+
+
+                        res.cookie("accessToken", accessToken, {
+                        httpOnly: true,     // Can't be accessed by JS 👈
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
+                        sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
+                        maxAge: 15 * 60 * 1000, // 15 mins
+                        });
+
+                        res.cookie("refreshToken", refreshToken, {
+                        httpOnly: true,     // Can't be accessed by JS 👈
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
+                        sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
+                        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 day
+                        });
                             res.status(200).send({
                                 success: true,
                                 message: "User logged in",
                                 user: {
-                                    name: newUser.displayname || 'N/A', // Provide default values if fields are undefined
+                                    displayname: newUser.firstname || 'N/A', // Provide default values if fields are undefined
                                     email: newUser.email || 'N/A',
                                     userType: 'customer'
                                 },
@@ -439,27 +460,49 @@ class UserController {
                     }
                     console.log("usr presenbt");
                     // const token = JWT.sign({ _id: existingUser._id }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
-                    const token = JWT.sign({ 
-                        _id: existingUser._id,
-                        email: existingUser.email,
-                        name: existingUser.displayname,
-                        userType: userType
-                        }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
-                    res.cookie("token", token, {
+                    const accessToken = this.generateAccessToken( existingUser._id);
+                        console.log(accessToken);
+                        const sessionId = this.generateSessionId();
+                        const { token: refreshToken, expiresAt } = this.generateRefreshToken( existingUser._id , sessionId);
+                        console.log('refreshToken',refreshToken);
+
+                       
+                        await this.refreshToken.create({
+                            userId: existingUser._id,
+                            sessionId: sessionId,
+                            token: refreshToken,
+                            expiresAt
+                        });
+                        // const token = JWT.sign({ 
+                        // _id: my_user._id,
+                        // email: my_user.email,
+                        // name: my_user.displayname,
+                        // userType: userType
+                        // }, process.env.TOKEN_SECRET, { expiresIn: '1d' });
+
+
+                        res.cookie("accessToken", accessToken, {
                         httpOnly: true,     // Can't be accessed by JS 👈
                         secure: true,       // Only sent over HTTPS (use false in local dev)
                         sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
-                        maxAge: 24 * 60 * 60 * 1000, // 1 day
-                    });
-                    res.status(200).send({
-                        success: true,
-                        message: "User logged in",
-                        user: {
-                            name: existingUser.displayname || 'N/A', // Provide default values if fields are undefined
-                            email: existingUser.email || 'N/A',
-                            userType: userType
-                        },
-                    });
+                        maxAge: 15 * 60 * 1000, // 15 mins
+                        });
+
+                        res.cookie("refreshToken", refreshToken, {
+                        httpOnly: true,     // Can't be accessed by JS 👈
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
+                        sameSite: "Lax",    // Or "None" if cross-site, but then also use secure: true
+                        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 day
+                        });
+                        res.status(200).send({
+                            success: true,
+                            message: "User logged in",
+                            user: {
+                                displayname: existingUser.firstname || 'N/A', // Provide default values if fields are undefined
+                                email: existingUser.email || 'N/A',
+                                userType: userType
+                            },
+                        });
                     
                 }
             }
