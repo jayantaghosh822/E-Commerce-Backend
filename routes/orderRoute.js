@@ -24,7 +24,7 @@ class OrderRoutes{
         this.router.post('/place-order',this.requireAuthCheck, this.placeOrder);
         this.router.get('/find-order/:orderId',this.requireAuthCheck, this.findOrder);
         this.router.get('/stripe-payment-status/:stripeSessionId',this.requireAuthCheck, this.stripePaymentStatus);
-        this.router.post('/v1/auth/payment-status-webhook', this.stripePaymentWebHook);
+        // this.router.post('/api/payment-status-webhook', this.stripePaymentWebHook);
     }
     getRoutes(){
         return this.router;

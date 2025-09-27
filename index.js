@@ -21,23 +21,23 @@ class Server {
         // this.app.use('/img', express.static(path.join(__dirname, 'public/img')));
         
 
-        // this.app.post('/api/v1/auth/payment-status-webhook', express.raw({ type: 'application/json' }),(request,res)=>{
-        //     console.log('request coming');
-        //     const sig = request.headers['stripe-signature'];
-        //     const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
-        //     // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
-        //     let event;
-        //     try {
-        //     event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-        //     } catch (err) {
-        //         console.log("erroer" , err);
-        //         response.status(400).send(`Webhook Error: ${err.message}`);
-        //         return;
-        //     }
+        this.app.post('/api/payment-status-webhook', express.raw({ type: 'application/json' }),(request,res)=>{
+            const sig = request.headers['stripe-signature'];
+            const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
+            // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
+            let event;
+            
+            try {
+                event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+            } catch (err) {
+                //console.log("erroer" , err);
+                response.status(400).send(`Webhook Error: ${err.message}`);
+                return;
+            }
 
-        //     console.log(event);
-        //     // return res.status(200).end(); // ✅ immediately respond to Stripe
-        // });
+            console.log(event);
+            return;
+        });
 
         this.app.use(express.json());
 

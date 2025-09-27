@@ -20,16 +20,16 @@ class OrderController {
         try{
             const userId = req.userId;
             const orderId = req.params.orderId;
-            console.log(orderId)
+            //console.log(orderId)
             if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
             }
             const order = await this.order.findById(orderId);
             return res.status(200).send({ order });
-            console.log(order);
+            //console.log(order);
 
         }catch(err){
-            console.log(err);
+            //console.log(err);
         }
     }
     // User Registration Method
@@ -41,33 +41,46 @@ class OrderController {
             return res.status(401).json({ message: 'Unauthorized' });
             }
 
-            const cartItems = await this.cart.find({ userId });
+            const cartItems = await this.cart.findOne({ userId:userId }).populate({
+                path: "items.variationId",
+                model: "ProductVariation",
+                select: "price stock sku images attributes" // 👈 only fetch required fields
+            })
+            .populate({
+                path: "items.productId",
+                model: "Product",
+                select: "name" // optional: basic product info
+            });
 
-            if (!cartItems.length) {
+            if (!cartItems) {
             return res.status(400).json({ message: 'Cart is empty' });
             }
-
-            const items = cartItems.map(item => ({
-            product: item.product,
-            price: item.price,
-            quan: item.quan,
-            image: item.image,
-            metaData: item.metaData,
-            }));
+            // //console.log('cartItems');
+            // // //console.log(cartItems);
+            // //console.log(cartItems.items);
+            // //console.log('cartItems');
+            // return;
+            // const items = cartItems.map(item => ({
+            // product: item.product,
+            // price: item.price,
+            // quan: item.quan,
+            // image: item.image,
+            // metaData: item.metaData,
+            // }));
 
            
-            const totalAmount = items.reduce((sum, item) => sum + item.price * item.quan, 0);
+            // const totalAmount = items.reduce((sum, item) => sum + item.price * item.quan, 0);
 
             const { paymentMethod, userDetails } = req.body;
              if(paymentMethod == 'stripe'){
-                const striprPaymentCreation = await this.stripePayment(items,userId);
-                // console.log(striprPaymentCreation,userId);
+                const striprPaymentCreation = await this.stripePayment(cartItems.items,userId);
+                // //console.log(striprPaymentCreation,userId);
                 if(striprPaymentCreation.stripeSessionStatus){
                     return res.status(201).json({ paymentUrl:striprPaymentCreation.paymentUrl,paymentMethod : paymentMethod });
                 }
                 
             }
-            // console.log(userDetails);
+            // //console.log(userDetails);
             if (!paymentMethod) {
                 if(!userDetails.phone || !userDetails.streetaddress || !userDetails.city || !userDetails.state || !userDetails.pin ||  !userDetails.country){
                     return res.status(400).json({ message: 'Missing user info' });
@@ -114,27 +127,30 @@ class OrderController {
 
 
 
-    async stripePayment(items,userId){
-        console.log(userId);
+    async stripePayment(cartItems,userId){
+        // //console.log(userId);
         const user = await this.user.findById(userId);
-        console.log("user",user);
+        //console.log("user",user);
+        // //console.log(cartItems);
+        //console.log(cartItems);
+        // return;
         const userEmail = user.email;
         try {
             // let order_details = req.body.cartItems;
             // let shippingCharge = req.body.shippingCharge;
            
-            const lineitems = items.map((item) => ({
+            const lineitems = cartItems.map((item) => ({
                 price_data: {
                     currency: "inr",
                     product_data: {
-                        name: item.metaData.name,
+                        name: item.productId.name,
                         metadata:{
-                        productId: item.product.toString(),
-                        productMetaData:JSON.stringify(item.metaData)
+                        productId: item.productId._id.toString(),
+                        variationId:item.variationId._id.toString(),
                         },
                     },
                 
-                    unit_amount: item.price * 100,
+                    unit_amount: item.variationId.price * 100,
                 },
                 quantity: item.quan
             }));
@@ -175,7 +191,7 @@ class OrderController {
             });
 
             if (session) {
-                // console.log(session);
+                // //console.log(session);
                 return {stripeSessionStatus:true,paymentUrl:session.url}
                 // Assuming you have a function to delete cart items
             // await deleteCartItems(req.params.userId); // Call your delete cart items function here
@@ -192,19 +208,19 @@ class OrderController {
 
     async stripePaymentStatus(req,res){
         const stripeSessionId = req.params.stripeSessionId;
-        // console.log(stripeSessionId);
+        // //console.log(stripeSessionId);
        
 
         const session = await stripe.checkout.sessions.retrieve(
             stripeSessionId
         );
-        // console.log(session);
+        // //console.log(session);
         if(session.payment_status=='paid'){
             const lineItems = await stripe.checkout.sessions.listLineItems(stripeSessionId, {
                 expand: ['data.price.product'],
             });
-            // console.log(lineItems);
-            // console.log(lineItems.data[0].price);
+            // //console.log(lineItems);
+            // //console.log(lineItems.data[0].price);
            
         }
         
@@ -212,63 +228,63 @@ class OrderController {
         
     }
 
-    // async stripePaymentWebHook(request,response){
-    //     const sig = request.headers['stripe-signature'];
-    //     const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
-    //     // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
-    //     let event;
+    async stripePaymentWebHook(request,response){
+        const sig = request.headers['stripe-signature'];
+        const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
+        // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
+        let event;
         
-    //     try {
-    //         event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-    //     } catch (err) {
-    //         console.log("erroer" , err);
-    //         response.status(400).send(`Webhook Error: ${err.message}`);
-    //         return;
-    //     }
+        try {
+            event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+        } catch (err) {
+            //console.log("erroer" , err);
+            response.status(400).send(`Webhook Error: ${err.message}`);
+            return;
+        }
 
-    //     console.log(event);
-    //     return;
-    //     switch (event.type) {
-    //         case 'checkout.session.completed':
-    //         const paymentIntentSucceeded = event.data.object;
-    //         // console.log('checkout.session.completed');
-    //         console.log(event);
-    //         // console.log('metadata',paymentIntentSucceeded);
-    //         if(paymentIntentSucceeded.payment_status == 'paid'){
-    //             const session_id = paymentIntentSucceeded.id; 
-    //             const line_items = await stripe.checkout.sessions.listLineItems(session_id, {
-    //             expand: ['data.price.product'],
-    //             });
-    //             console.log('line_items',line_items);
-    //             const order_details=[];
-    //             const cart_item_ids = [];
-    //             line_items.data.forEach(item=>{
-    //             let price = item.price;
-    //             console.log(price);
-    //             cart_item_ids.push(price.product.metadata.cart_item_id);
-    //             order_details.push({product_metadata:price.product.metadata,name:item.description,total:item.amount_total,quan:item.quantity});
+        console.log(event);
+        return;
+        switch (event.type) {
+            case 'checkout.session.completed':
+            const paymentIntentSucceeded = event.data.object;
+            // //console.log('checkout.session.completed');
+            //console.log(event);
+            // //console.log('metadata',paymentIntentSucceeded);
+            if(paymentIntentSucceeded.payment_status == 'paid'){
+                const session_id = paymentIntentSucceeded.id; 
+                const line_items = await stripe.checkout.sessions.listLineItems(session_id, {
+                expand: ['data.price.product'],
+                });
+                //console.log('line_items',line_items);
+                const order_details=[];
+                const cart_item_ids = [];
+                line_items.data.forEach(item=>{
+                let price = item.price;
+                //console.log(price);
+                cart_item_ids.push(price.product.metadata.cart_item_id);
+                order_details.push({product_metadata:price.product.metadata,name:item.description,total:item.amount_total,quan:item.quantity});
                 
-    //             });
-    //             console.log('cart ids are', cart_item_ids);
-    //             // console.log('order details', paymentIntentSucceeded.metadata);
-    //             // const order_details =  JSON.parse(paymentIntentSucceeded.metadata.order);
-    //             console.log('order details', order_details);
-    //             const user_id = JSON.parse(paymentIntentSucceeded.metadata.user_id);
-    //             console.log('userID', user_id);
-    //             const order_item = new order({order_details,user_id});
-    //             const order_save_status =  await order_item.save();
-    //             if(order_save_status){
-    //             console.log(order_save_status);
-    //             await cart.deleteMany({ user_id: user_id });
-    //             }
-    //         }
-    //         // Then define and call a function to handle the event payment_intent.succeeded
-    //         break;
-    //         // ... handle other event types
-    //         default:
-    //         console.log(`Unhandled event type ${event.type}`);
-    //     }
-    // }
+                });
+                //console.log('cart ids are', cart_item_ids);
+                // //console.log('order details', paymentIntentSucceeded.metadata);
+                // const order_details =  JSON.parse(paymentIntentSucceeded.metadata.order);
+                //console.log('order details', order_details);
+                const user_id = JSON.parse(paymentIntentSucceeded.metadata.user_id);
+                //console.log('userID', user_id);
+                const order_item = new order({order_details,user_id});
+                const order_save_status =  await order_item.save();
+                if(order_save_status){
+                //console.log(order_save_status);
+                await cart.deleteMany({ user_id: user_id });
+                }
+            }
+            // Then define and call a function to handle the event payment_intent.succeeded
+            break;
+            // ... handle other event types
+            default:
+            //console.log(`Unhandled event type ${event.type}`);
+        }
+    }
 
 
 }
