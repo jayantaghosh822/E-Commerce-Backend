@@ -1,25 +1,8 @@
 const mongoose = require('mongoose');
 
 const orderItemSchema = new mongoose.Schema({
-  product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  quan: {
-    type: Number,
-    required: true,
-    min: 1,
-  },
-  image: String,
-  metaData: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
-  },
+
+  
 });
 
 const shippingAddressSchema = new mongoose.Schema({
@@ -35,6 +18,7 @@ const shippingAddressSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema(
   {
+    stripeSessionId:{ type: String, required: true },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -42,15 +26,23 @@ const orderSchema = new mongoose.Schema(
     },
 
     items: {
-      type: [orderItemSchema],
+      type: Object,
       required: true,
     },
 
-    totalAmount: {
+    total: {
       type: Number,
       required: true,
     },
 
+    shippingCost:{
+      type: Number,
+      required: true,
+    },
+    totalAmount:{
+      type: Number,
+      required: true,
+    },
     paymentStatus: {
       type: String,
       enum: ['pending', 'paid', 'failed'],

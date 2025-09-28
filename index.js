@@ -5,6 +5,12 @@ const authRoutes = require("./routes/userRoute");
 const categoryRoutes = require("./routes/categoryRoute");
 const productRoutes = require("./routes/productRoute");
 const cartRoutes = require("./routes/cartRoute");
+const orderModel = require('./models/orderModel.js');
+const order = orderModel.Order;
+const cartModel = require('./models/cartModel.js');
+const cart = orderModel.Cart;
+const variationModel = require('./models/productVariationModel.js');
+const variations = variationModel.ProductVariation;
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const corsOptions = {
@@ -21,7 +27,7 @@ class Server {
         // this.app.use('/img', express.static(path.join(__dirname, 'public/img')));
         
 
-        this.app.post('/api/payment-status-webhook', express.raw({ type: 'application/json' }),(request,res)=>{
+        this.app.post('/api/payment-status-webhook', express.raw({ type: 'application/json' }),async(request,res)=>{
             const sig = request.headers['stripe-signature'];
             const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
             // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
@@ -29,13 +35,112 @@ class Server {
             
             try {
                 event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+                switch (event.type) {
+                    case 'checkout.session.completed':
+                    const paymentIntentSucceeded = event.data.object;
+                    // //console.log('checkout.session.completed');
+                    //console.log(event);
+                    // //console.log('metadata',paymentIntentSucceeded);
+                    if(paymentIntentSucceeded.payment_status == 'paid'){
+                        const session_id = paymentIntentSucceeded.id; 
+                        const line_items = await stripe.checkout.sessions.listLineItems(session_id, {
+                        expand: ['data.price.product'],
+                        });
+                        // const sessionWithDetails = await stripe.checkout.sessions.retrieve(session_id, {
+                        //     expand: ['line_items', 'customer', 'shipping'],
+                        // });
+                        // console.log(sessionWithDetails.shipping);
+                        
+                        // console.log('line_items',line_items);
+
+                        const orderItems = line_items.data.map((item) => {
+                        const price = item.price;
+                        const productMeta = price.product.metadata;
+                        
+                        return {
+                            product: productMeta.productId,       // from Stripe metadata
+                            price: price.unit_amount,             // Stripe unit price
+                            quan: item.quantity,                  // Stripe quantity
+                            image: price.product.images?.[0] || "", // first image if available
+                            metaData: {
+                            variationId: productMeta.variationId,
+                            stripePriceId: price.id,
+                            stripeProductId: price.product.id,
+                            rawStripeObject: item               // keep full Stripe data
+                            }
+                        };
+                        });
+                        const shippingCost = paymentIntentSucceeded.total_details.amount_shipping;
+                        
+                        // console.log(orderItems);
+                        // console.log(paymentIntentSucceeded.metadata); 
+                        const shippingAddress = paymentIntentSucceeded.metadata.address
+                        ? JSON.parse(paymentIntentSucceeded.metadata.address)
+                        : {};
+                        // return;
+                        // Now create a full order
+                        // console.log(orderItems);
+                        // const totalAmount =  orderItems.reduce((acc, item) => acc + item.price * item.quan, 0); // total in paise
+                        // console.log(totalAmount);
+                        // return;
+                        const total = orderItems.reduce((acc, item) => acc + item.price * item.quan);
+                        const cartItemsId = paymentIntentSucceeded.metadata.cartItemId
+                        ? JSON.parse(paymentIntentSucceeded.metadata.cartItemId)
+                        : {};
+                        const orderData = {
+                            stripeSessionId:session_id,
+                            userId: paymentIntentSucceeded.metadata.user_id, // comes from Stripe metadata
+                            items: line_items,
+                            total: paymentIntentSucceeded.amount_subtotal, // total in paise
+                            shippingCost: paymentIntentSucceeded.total_details?.amount_shipping || 0,
+                            totalAmount: paymentIntentSucceeded.amount_total,
+                            paymentStatus: "paid", // set after webhook confirmation
+                            paymentMethod: "stripe",
+                            orderStatus: "processing",
+                            shippingAddress: {
+                                name: shippingAddress.name,
+                                phone: shippingAddress.phone,
+                                addressLine1: shippingAddress.addressLine1,
+                                addressLine2: shippingAddress.addressLine2,
+                                city: shippingAddress.city,
+                                state: shippingAddress.state,
+                                postalCode: shippingAddress.postalCode,
+                                country: shippingAddress.country,
+                            },
+                        };
+
+                        const newOrder = await order.create(orderData);
+                        if(newOrder){
+                            for (const orderItem of orderItems) {
+                            const variationId = orderItem.metaData.variationId;
+
+                            if (variationId) {
+                                const updated = await variations.findOneAndUpdate(
+                                { _id: variationId, stock: { $gte: orderItem.quan } }, // only update if enough stock
+                                { $inc: { stock: -orderItem.quan } },
+                                { new: true }
+                                );
+
+                                if (!updated) {
+                                throw new Error(`Not enough stock for variation ${variationId}`);
+                                }
+                            }
+                            }
+                        }
+                    }
+                    // Then define and call a function to handle the event payment_intent.succeeded
+                    break;
+                    // ... handle other event types
+                    default:
+                    //console.log(`Unhandled event type ${event.type}`);
+                }
             } catch (err) {
-                //console.log("erroer" , err);
-                response.status(400).send(`Webhook Error: ${err.message}`);
+                console.log("erroer" , err);
+                // res.status(400).send(`Webhook Error: ${err.message}`);
                 return;
             }
 
-            console.log(event);
+            // console.log(event);
             return;
         });
 
