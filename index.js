@@ -8,7 +8,7 @@ const cartRoutes = require("./routes/cartRoute");
 const orderModel = require('./models/orderModel.js');
 const order = orderModel.Order;
 const cartModel = require('./models/cartModel.js');
-const cart = orderModel.Cart;
+const cart = cartModel.Cart;
 const variationModel = require('./models/productVariationModel.js');
 const variations = variationModel.ProductVariation;
 const cors = require("cors");
@@ -56,6 +56,7 @@ class Server {
                         const orderItems = line_items.data.map((item) => {
                         const price = item.price;
                         const productMeta = price.product.metadata;
+
                         
                         return {
                             product: productMeta.productId,       // from Stripe metadata
@@ -126,6 +127,8 @@ class Server {
                                 }
                             }
                             }
+                            console.log("webhookk",paymentIntentSucceeded.metadata);
+                            await cart.deleteOne({_id:JSON.parse(paymentIntentSucceeded.metadata.cartItemId)});
                         }
                     }
                     // Then define and call a function to handle the event payment_intent.succeeded
