@@ -13,6 +13,7 @@ const variationModel = require('./models/productVariationModel.js');
 const variations = variationModel.ProductVariation;
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 const corsOptions = {
     origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE,PATCH",
@@ -149,7 +150,16 @@ class Server {
 
         this.app.use(express.json());
 
-        
+       
+
+        this.app.use(
+        session({
+            secret: process.env.SESSION_SECRET, // use process.env.SESSION_SECRET in prod
+            resave: false,
+            saveUninitialized: true,
+            cookie: { secure: false }, // set secure:true if using https
+        })
+        );
 
         this.app.use(express.urlencoded({ extended: true }));
         this.port = 5000;

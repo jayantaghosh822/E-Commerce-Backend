@@ -29,17 +29,18 @@ class CartRoutes{
         this.updateCartItem = (req,res)=>this.CartController.updateCartItem(req,res);
         this.authsCheck = new authMiddleware();
         this.requireAuthCheck = (req,res,next) => this.authsCheck.requireSignIn(req, res , next);
+        this.cartUser = (req,res,next) => this.authsCheck.cartUser(req, res , next);
         this.createRoutes();
     }
     createRoutes(){
       // this.router.get('/Products', this.allProducts);
-      this.router.post('/add-to-cart',this.requireAuthCheck, this.addItemToCart);
-      this.router.get('/get-cart-items',this.requireAuthCheck, this.cartItems);
-      this.router.post('/get-cart-data', this.cartData);
-      this.router.post('/get-user-cart-data',this.requireAuthCheck, this.userCartData);
-      this.router.post('/add-local-items-to-cart',this.requireAuthCheck, this.addLocalItems);
-      this.router.delete('/remove-cart-item', this.requireAuthCheck , this.removeCartItem);
-      this.router.patch('/update-item/:itemId',this.requireAuthCheck, this.updateCartItem);
+      this.router.post('/add-to-cart',this.cartUser,this.addItemToCart);
+      this.router.get('/get-cart-items',this.cartUser, this.cartItems);
+      // this.router.post('/get-cart-data', this.cartData);
+      // this.router.post('/get-user-cart-data',this.requireAuthCheck, this.userCartData);
+      // this.router.post('/add-local-items-to-cart',this.requireAuthCheck, this.addLocalItems);
+      this.router.delete('/remove-cart-item', this.cartUser , this.removeCartItem);
+      this.router.patch('/update-item/',this.cartUser, this.updateCartItem);
       //   this.router.get('/filter-products', this.filterProducts);
       // this.router.get('/Product/:slug', this.getProduct);
       // this.router.put('/Product/edit/:id', this.editProduct);

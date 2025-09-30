@@ -62,6 +62,33 @@ class authMiddleware{
           
         }
     }
+
+
+    async cartUser(req, res, next) {
+        const token = req.cookies.accessToken; // cookie auth
+        if (!token) {
+            // Guest user → just continue, no userId
+            req.userId = null;
+            return next();
+        }
+
+        try {
+            const decoded = JWT.verify(token, process.env.TOKEN_SECRET);
+            req.userId = decoded._id;
+            next();
+        } catch (err) {
+            if (err.name === 'TokenExpiredError') {
+                req.userId = null; // treat as guest
+                return next();
+            }
+            // invalid token → treat as guest or block
+            req.userId = null;
+            next();
+        }
+    }
+
+
+
 }
 
 module.exports = authMiddleware;

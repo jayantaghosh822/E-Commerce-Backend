@@ -49,71 +49,71 @@ class CartController {
     }
 
     // User Registration Method
-    async addToCart(req, res) {
-      console.log(req.body.productData);
-      try {
-        const userId = req.userId;
-        const item = req.body.productData;
+    // async addToCart(req, res) {
+    //   //console.log(req.body.productData);
+    //   try {
+    //     const userId = req.userId;
+    //     const item = req.body.productData;
 
-        if (
-          !item.productId ||
-          !item.variationId ||
-          !item.quan
-        ) {
-          return res.status(400).json({
-            success: false,
-            message: "Item data missing",
-          });
-        }
+    //     if (
+    //       !item.productId ||
+    //       !item.variationId ||
+    //       !item.quan
+    //     ) {
+    //       return res.status(400).json({
+    //         success: false,
+    //         message: "Item data missing",
+    //       });
+    //     }
 
-        // Find or create user's cart
-        let cart = await this.cart.findOne({ userId });
+    //     // Find or create user's cart
+    //     let cart = await this.cart.findOne({ userId });
 
-        if (!cart) {
-          cart = new this.cart({
-            userId,
-            items: [],
-          });
-        }
+    //     if (!cart) {
+    //       cart = new this.cart({
+    //         userId,
+    //         items: [],
+    //       });
+    //     }
 
-        // Look for a matching item (same product & variation)
-        const match = cart.items.find(
-          (savedItem) =>
-            savedItem.productId.toString() === item.productId &&
-            savedItem.variationId.toString() === item.variationId
-        );
+    //     // Look for a matching item (same product & variation)
+    //     const match = cart.items.find(
+    //       (savedItem) =>
+    //         savedItem.productId.toString() === item.productId &&
+    //         savedItem.variationId.toString() === item.variationId
+    //     );
 
-        if (match) {
-          // If exists → increment quantity
-          match.quan += item.quan;
-        } else {
-          // Otherwise push new item
-          cart.items.push({
-            productId: new mongoose.Types.ObjectId(item.productId),
-            variationId: new mongoose.Types.ObjectId(item.variationId),
-            quan: item.quan,
-            price: item.price || 0,
-            image: item.image || "",
-            metaData: item.metaData || {},
-          });
-        }
+    //     if (match) {
+    //       // If exists → increment quantity
+    //       match.quan += item.quan;
+    //     } else {
+    //       // Otherwise push new item
+    //       cart.items.push({
+    //         productId: new mongoose.Types.ObjectId(item.productId),
+    //         variationId: new mongoose.Types.ObjectId(item.variationId),
+    //         quan: item.quan,
+    //         price: item.price || 0,
+    //         image: item.image || "",
+    //         metaData: item.metaData || {},
+    //       });
+    //     }
 
-        const itemSaved = await cart.save();
+    //     const itemSaved = await cart.save();
 
-        return res.status(201).json({
-          success: true,
-          message: "Item added to cart",
-          cart: itemSaved,
-        });
-      } catch (err) {
-        console.error("Error in addToCart:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to add item to cart",
-          error: err.message,
-        });
-      }
-    }
+    //     return res.status(201).json({
+    //       success: true,
+    //       message: "Item added to cart",
+    //       cart: itemSaved,
+    //     });
+    //   } catch (err) {
+    //     console.error("Error in addToCart:", err);
+    //     return res.status(500).json({
+    //       success: false,
+    //       message: "Failed to add item to cart",
+    //       error: err.message,
+    //     });
+    //   }
+    // }
 
   
 
@@ -231,11 +231,11 @@ class CartController {
     // const cartItems = (req.body.cart.items);
     try {
     let userId = req.userId;
-    console.log(userId);
+    //console.log(userId);
     const fetchUserCart = await this.cart.findOne({userId:userId});
-    console.log(fetchUserCart);
+    //console.log(fetchUserCart);
     const cartItems = fetchUserCart.items;
-    console.log(cartItems);
+    //console.log(cartItems);
     // return;
     const productIds = cartItems.map(i => i.productId);
     const variationIds = cartItems.map(i => i.variationId);
@@ -286,99 +286,315 @@ class CartController {
   }
 
 
-  async cartItems(req, res) {
-    try{
-      // const token = req.cookies.token;
-      let userId = req.userId;
-      
-        // console.log(token);
-        // const user =  JWT.verify(req.cookies.token,process.env.TOKEN_SECRET);
-        // if(user){
-        //   // console.log(user);
-        //   userId = user._id;
-        // }
-        // console.log(userId);
-        if(userId!=null){
-          const cartItems = await this.cart.findOne({userId:userId});
-          // console.log(cartItems);
-          res.status(200).json({ message: "Item Fetched", cartItems });
+ 
+  async removeCartItem(req, res) {
+    try {
+      const userId = req.userId;
+
+      if (userId) {
+        // ✅ Logged-in user → DB cart
+        const { itemId } = req.query;
+
+        if (!itemId) {
+          return res.status(400).json({ success: false, message: "Missing itemId" });
         }
-      
-    }catch(err){
-      console.log(err);
-    }
-  }
 
+        const updatedCart = await this.cart.findOneAndUpdate(
+          { userId: userId },                        // find cart by userId
+          { $pull: { items: { _id: itemId } } },     // remove item by _id
+          { new: true }
+        );
 
-  async removeCartItem(req,res){
-    let userId = req.userId;
-    try{
-     
-      let userId = req.userId;
-      if(userId){
-          const {itemId,cartId} = req.query;
-          console.log(itemId);
-          console.log(userId);
-          if(itemId){
-
-          const updatedCart = await this.cart.findByIdAndUpdate(
-              cartId,
-              {
-                $pull: { items: { _id: itemId } } // remove item by its _id
-              },
-              { new: true } // return updated cart
-          );
-          console.log(updatedCart);
-          res.status(200).send({
-            success:true,
-            message:'Item Deleted',
-            updatedCart
-          })
+        if (!updatedCart) {
+          return res.status(404).json({ success: false, message: "Cart or item not found" });
         }
+
+        return res.status(200).json({
+          success: true,
+          message: "Item deleted",
+          cart: updatedCart
+        });
+      } else {
+        // ✅ Guest user → session cart
+        const { productId, variationId } = req.body; // frontend must send these
+
+        if (!req.session.cart) req.session.cart = { items: [] };
+
+        const beforeLength = req.session.cart.items.length;
+
+        req.session.cart.items = req.session.cart.items.filter(
+          i => !(i.product?.id === productId && i.variation?.id === variationId)
+        );
+
+        if (req.session.cart.items.length === beforeLength) {
+          return res.status(404).json({ success: false, message: "Item not found in session cart" });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: "Item deleted",
+          cart: req.session.cart.items
+        });
       }
-    }catch(err){
-      console.log(err);
-      res.status(500).send({
-            success:false,
-            message:'server Error'
-      })
+    } catch (err) {
+      console.error("Error removing cart item:", err);
+      return res.status(500).json({ success: false, message: "Server error" });
     }
-    
   }
+
+
 
   async updateCartItem(req, res) {
-    const { itemId } = req.params; // itemId inside cart.items
-    const { action } = req.body; // "inc" or "dec"
-    const userId = req.userId;
-    
     try {
-    const updateValue = action === "inc" ? 1 : -1;
+      const { itemId, action, productId, variationId } = req.body; 
+      // itemId might be null for guest, so we use productId + variationId
+      const userId = req.userId;
 
-    const cart = await this.cart.findOneAndUpdate(
-      { userId: userId, "items._id": itemId },
-      { $inc: { "items.$.quan": updateValue } },
-      { new: true } // return updated cart
+      const updateValue = action === "inc" ? 1 : -1;
+
+      if (userId) {
+        // ✅ Logged-in user → DB cart (unchanged)
+        const cart = await this.cart.findOneAndUpdate(
+          { userId: userId, "items._id": itemId },
+          { $inc: { "items.$.quan": updateValue } },
+          { new: true }
+        );
+
+        if (!cart) return res.status(404).json({ success: false, message: "Cart or item not found" });
+
+        // Remove item if quantity < 1
+        const item = cart.items.id(itemId);
+        if (item && item.quan < 1) {
+          item.remove();
+          await cart.save();
+        }
+
+        return res.status(200).json({ success: true, message: "Item updated", cart });
+      } else {
+        console.log(req.session.cart);
+        // ✅ Guest user → session cart
+        if (!req.session.cart) req.session.cart = { items: [] };
+
+        const itemIndex = req.session.cart.items.findIndex(
+          i =>
+            i.productId === productId &&
+            i.variationId === variationId
+        );
+
+        
+        if (itemIndex === -1) return res.status(404).json({ success: false, message: "Item not found" });
+
+        req.session.cart.items[itemIndex].quan += updateValue;
+
+        // Remove item if quantity < 1
+        if (req.session.cart.items[itemIndex].quan < 1) {
+          req.session.cart.items.splice(itemIndex, 1);
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: "Item updated",
+          cart: req.session.cart.items
+        });
+      }
+    } catch (err) {
+      console.error("Error updating cart item:", err);
+      return res.status(500).json({ success: false, message: "Something went wrong" });
+    }
+  }
+
+
+
+  async addToCart(req, res) {
+  //console.log(req.body.productData);
+  try {
+    const userId = req.userId || null; // null if guest
+    const item = req.body.productData;
+
+    if (!item.productId || !item.variationId || !item.quan) {
+      return res.status(400).json({
+        success: false,
+        message: "Item data missing",
+      });
+    }
+
+    // If not logged in → use session only
+    if (!userId) {
+      if (!req.session.cart) {
+        req.session.cart = { items: [] };
+      }
+
+      const match = req.session.cart.items.find(
+        (savedItem) =>
+          savedItem.productId === item.productId &&
+          savedItem.variationId === item.variationId
+      );
+
+      if (match) {
+        match.quan += item.quan;
+      } else {
+        req.session.cart.items.push({
+          productId: item.productId,
+          variationId: item.variationId,
+          quan: item.quan
+        });
+      }
+      // //console.log(req.session.cart);
+      return res.status(201).json({
+        success: true,
+        message: "Item added to guest cart (session)",
+        cart: req.session.cart,
+      });
+    }
+
+    
+    // If logged in → use DB cart
+    let cart = await this.cart.findOne({ userId });
+    if (!cart) {
+      cart = new this.cart({ userId, items: [] });
+    }
+
+    const match = cart.items.find(
+      (savedItem) =>
+        savedItem.productId.toString() === item.productId &&
+        savedItem.variationId.toString() === item.variationId
     );
 
-    // Remove item if quantity falls below 1
-    // if (cart) {
-    //   const item = cart.items.id(itemId);
-    //   if (item && item.quan < 1) {
-    //     item.remove();
-    //     await this.cart.save();
-    //   }
-    // }
+    if (match) {
+      match.quan += item.quan;
+    } else {
+      cart.items.push({
+        productId: new mongoose.Types.ObjectId(item.productId),
+        variationId: new mongoose.Types.ObjectId(item.variationId),
+        quan: item.quan
+      });
+    }
 
-    res.status(201).send({
-      success:true,
-      message:'Item Upadted',
-      cart
-    })
+    const itemSaved = await cart.save();
+
+    // Sync session cart with DB cart too
+    req.session.cart = {
+      items: itemSaved.items.map((i) => ({
+        productId: i.productId.toString(),
+        variationId: i.variationId.toString(),
+        quan: i.quan,
+      })),
+    };
+
+    return res.status(201).json({
+      success: true,
+      message: "Item added to cart",
+      cart: itemSaved,
+    });
   } catch (err) {
-    console.error("Error updating cart item:", err);
-    throw err;
+    console.error("Error in addToCart:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add item to cart",
+      error: err.message,
+    });
   }
   }
+
+  async cartItems(req, res) {
+  try {
+    let rawItems = [];
+
+    if (req.userId) {
+      // 🔹 Logged-in user
+      let dbCart = await this.cart.findOne({ userId: req.userId });
+       console.log(dbCart);
+      // 🔹 Session items (guest cart)
+      const sessionItems = req.session.cart?.items || [];
+
+      if (sessionItems.length > 0) {
+        if (!dbCart) {
+          // No DB cart → create with session items
+          dbCart = await this.cart.create({
+            userId: req.userId,
+            items: sessionItems
+          });
+        } else {
+          // Merge session into DB cart
+          sessionItems.forEach(sessionItem => {
+            const existingIndex = dbCart.items.findIndex(
+              i =>
+                i.productId.toString() === sessionItem.productId &&
+                i.variationId.toString() === sessionItem.variationId
+            );
+
+            if (existingIndex !== -1) {
+              // Same item → sum quantities
+              dbCart.items[existingIndex].quan += sessionItem.quan;
+            } else {
+              // New item → push
+              dbCart.items.push(sessionItem);
+            }
+          });
+
+          await dbCart.save();
+        }
+
+        // 🔹 Clear guest session after merge
+        req.session.cart = { items: [] };
+      }
+
+      rawItems = dbCart?.items || [];
+    } else {
+      // 🔹 Guest user → session cart
+      rawItems = req.session.cart?.items || [];
+    }
+
+    if (rawItems.length === 0) return res.json([]); // empty cart
+
+    // 🔹 Fetch products & variations
+    const productIds = rawItems.map(i => i.productId);
+    const variationIds = rawItems.map(i => i.variationId);
+
+    const products = await this.product.find({ _id: { $in: productIds } }).lean();
+    const variations = await this.productVariation.find({ _id: { $in: variationIds } }).lean();
+
+    // 🔹 Build lookup maps
+    const productMap = Object.fromEntries(products.map(p => [p._id.toString(), p]));
+    const variationMap = Object.fromEntries(variations.map(v => [v._id.toString(), v]));
+
+    // 🔹 Structured cart response
+    const structuredCart = rawItems.map(item => {
+      const product = productMap[item.productId.toString()];
+      const variation = variationMap[item.variationId.toString()];
+
+      return {
+        _id: item._id || null,
+        quan: item.quan,
+        product: product
+          ? {
+              id: product._id,
+              name: product.name,
+              slug: product.slug,
+              image: product.image,
+              brand: product.brand,
+              category: product.category
+            }
+          : null,
+        variation: variation
+          ? {
+              id: variation._id,
+              attributes: variation.attributes,
+              price: variation.price,
+              stock: variation.stock,
+              sku: variation.sku
+            }
+          : null
+      };
+    });
+
+    return res.json(structuredCart);
+  } catch (err) {
+    console.error("Error fetching cart data:", err);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  }
+
 
 
 }

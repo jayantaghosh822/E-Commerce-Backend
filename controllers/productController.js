@@ -61,7 +61,7 @@ class ProductController {
     //         });
             
         
-    //     // console.log("uploadResult",uploadResult);
+    //     // //console.log("uploadResult",uploadResult);
     //     }
     //     if(productGalleryImage){
     //         productGalleryImagePath = productGalleryImage.map((ele)=>{
@@ -70,19 +70,19 @@ class ProductController {
     //     }
        
     //     try {
-    //         // console.log("Received Data:", req.body);
+    //         // //console.log("Received Data:", req.body);
             
     
     //         const { pname, pslug, pdescription, pcategoryid, psize , pcolorid , pbrandid } = req.body;
              
     //         // Ensure an image is uploaded
            
-    //         console.log(productImagePath);
+    //         //console.log(productImagePath);
     //         if(productImagePath){
     //             productImagePath = productImagePath[0];
     //         }
             
-    //         console.log(productImagePath);
+    //         //console.log(productImagePath);
     //         let name;
     //         let slug;
     //         let description;
@@ -168,7 +168,7 @@ class ProductController {
     //                     const galleryImageUrls = await Promise.all(galleryUploadPromises);
     //                     galleryProductImage.push(...galleryImageUrls);
 
-    //                     // console.log("After all images:", galleryImage);
+    //                     // //console.log("After all images:", galleryImage);
     //                     const productImage = new this.productImages({
     //                         product: productSaved._id,
     //                         mainImage:singleProductImage,
@@ -177,7 +177,7 @@ class ProductController {
     //                     });
                 
     //                     await productImage.save();
-    //                     // console.log("Upload Result:", uploadResult);
+    //                     // //console.log("Upload Result:", uploadResult);
     //                 } catch (error) {
     //                     console.error("Upload Error:", error);
     //                 }
@@ -213,7 +213,7 @@ class ProductController {
             const productImageFiles = req.files.pimage || [];
             const productGalleryFiles = req.files.pgalleryimage || [];
             const hostUrl = `${req.protocol}://${req.get('host')}`;
-            // console.log(req.body);
+            // //console.log(req.body);
             // return;
             // Extract fields from request
             const { pname, pslug, pdescription, pcategoryid, pcolorid ,pbrandid, attributes, variations } = req.body;
@@ -259,7 +259,7 @@ class ProductController {
                 attributes: JSON.parse(attributes || "[]"), // [{name: "size", values: ["S","M"]}, ...]
                 isActive: true
             });
-            // console.log(product);
+            // //console.log(product);
             // return;
             const savedProduct = await product.save();
 
@@ -306,7 +306,7 @@ class ProductController {
 
     async allProducts(req,res){
         const all_products = await product.find();
-        //console.log(all_products);
+        ////console.log(all_products);
         return res.status(200).send({
          success:true,
          result:all_products
@@ -314,10 +314,10 @@ class ProductController {
     }
 
     async delProduct(req,res){
-        // console.log(req.headers.product_id);
+        // //console.log(req.headers.product_id);
     
         const del_product = await product.deleteOne({_id:req.headers.product_id});
-        // console.log(del_product);
+        // //console.log(del_product);
         if(del_product){
             return res.status(200).send({
                 success:true,
@@ -328,7 +328,7 @@ class ProductController {
     }
 
     async getProductByID(req,res){
-        // console.log(req);
+        // //console.log(req);
         try{
             const proId = req.query.proId;
             const getProduct = await this.product.findOne({_id:proId})
@@ -355,13 +355,13 @@ class ProductController {
 
     async getProductBySlug (req, res){
         const { slug } = req.params;  // ✅ destructuring
-        console.log("slug:", slug);
-         // console.log(req);
+        //console.log("slug:", slug);
+         // //console.log(req);
         try{
             const proId = req.query.proId;
             const getProduct = await this.product.findOne({slug:slug})
             .populate('images').populate('variations');
-            console.log(getProduct);
+            //console.log(getProduct);
             if(getProduct){
                 const slugs = await this.categoryController.getCategoryPath(getProduct.category);
                 const productObj = getProduct.toObject(); // ✅ Important fix
@@ -383,31 +383,31 @@ class ProductController {
     async updateProduct(req,res){
         let existing_product=null;
         // const form = JSON.parse(req.body.formData);
-    //  console.log(req.body);
-    //  console.log(req.body.image);
+    //  //console.log(req.body);
+    //  //console.log(req.body.image);
      myJSON = JSON.parse(req.body.formData);
-    // //console.log(myJSON);
+    // ////console.log(myJSON);
      req.body.formData = myJSON;
-    //  console.log("pro_slug",req.body.formData.slug);
-    //  console.log("pro_name",req.body.formData.name);
+    //  //console.log("pro_slug",req.body.formData.slug);
+    //  //console.log("pro_name",req.body.formData.name);
     let slug="";
     if(req.body.formData.slug==null){
         slug = slugify( req.body.formData.name, '_');
         req.body.formData.slug = slug;
-        // console.log("2pro_slug",slug);
-        // console.log("3pro_slug",req.body.formData.slug);
+        // //console.log("2pro_slug",slug);
+        // //console.log("3pro_slug",req.body.formData.slug);
     }
     if(req.body.formData.slug==""){
         slug = slugify( req.body.formData.name, '_');
         req.body.formData.slug = slug;
-        // console.log("2pro_slug",slug);
-        // console.log("3pro_slug",req.body.formData.slug);
+        // //console.log("2pro_slug",slug);
+        // //console.log("3pro_slug",req.body.formData.slug);
     }
     if( (req.body.formData.slug!="") && (req.body.formData.name!="") ){
     // let slug = req.body.formData.slug;
     let name = req.body.formData.name;
     
-    // console.log("line 45",slug);
+    // //console.log("line 45",slug);
     if(slug==null){
        return res.status(200).send({
             success:false,
@@ -421,9 +421,9 @@ class ProductController {
         })
     }
     }
-    // console.log("if existing",existing_product);
+    // //console.log("if existing",existing_product);
     if(existing_product==null && req.body.formData.name!=null ){
-        // console.log("here");
+        // //console.log("here");
     
        
         if( req.body.formData.shipping == 1){
@@ -448,14 +448,14 @@ class ProductController {
                 category:req.body.formData.category,
                 brand:req.body.formData.brand,
             };
-            // console.log(updateData);
+            // //console.log(updateData);
             if(req.body.image==undefined){
             if(req.file!=null){
              
                let buffer_data = fs.readFileSync(req.file.path);
                 let content_type = req.file.mimetype;
-                // console.log(buffer_data);
-                // console.log(content_type);
+                // //console.log(buffer_data);
+                // //console.log(content_type);
                   updateData = {
                 name:req.body.formData.name,
                 description:req.body.formData.name,
@@ -471,10 +471,10 @@ class ProductController {
             }
             }
              // await new_product.save();
-            //console.log(new_product);
+            ////console.log(new_product);
         }
        catch(error){
-        console.log(error);
+        //console.log(error);
        }
        product.findByIdAndUpdate(prod_id, updateData, { new: true })
         .then(updatedProduct => {
@@ -491,36 +491,36 @@ class ProductController {
     //         const colorVariants = require('../model/colorVariants.js');
     // const colors = colorVariants.Color;
             let pro_colors = req.body.formData.colors;
-            // console.log(pro_colors);
+            // //console.log(pro_colors);
     
             if(Object.keys(pro_colors).length!=0){
                 const pro_find = await colors.findOne({ product:prod_id })
                 .then(result=>{
-                    //console.log("colored" , result);
+                    ////console.log("colored" , result);
                     if(result!=null){
-                        console.log("not null");
+                        //console.log("not null");
                  colors.updateOne({ product:prod_id }, { color: pro_colors })
                  .then(result => {
                   
-                   //console.log(result);
+                   ////console.log(result);
                  })
                  .catch(error => {
                 //    console.error(error);
                  });
                  }
                  else{
-                    //  console.log("reached else part");
+                    //  //console.log("reached else part");
                      const newColor = new colors({
                          product: prod_id,
                          color: pro_colors
                        });
                        newColor.save()
                        .then(savedColor =>{
-                        //  console.log('Color inserted:', savedColor);
+                        //  //console.log('Color inserted:', savedColor);
                        })
                  }
                 });
-                //console.log("proImage" , pro_find);
+                ////console.log("proImage" , pro_find);
                
                
             }
@@ -528,12 +528,12 @@ class ProductController {
         }
         if (!(Object.keys(req.body.formData.sizes) === 0)) {
             let pro_sizes = req.body.formData.sizes;
-            // console.log(pro_sizes);
+            // //console.log(pro_sizes);
             
             const size_pro_find = await product_size_variants.findOne({product:prod_id});
             
             if(size_pro_find!=null){
-                // console.log("products found");
+                // //console.log("products found");
                 const sizeVariantsDataupdate = Object.entries(pro_sizes).map(([size, quan]) => ({
                     size,
                     quan: quan ? parseInt(quan) : 0, // Convert quantity to number, handle empty string case
@@ -553,7 +553,7 @@ class ProductController {
                       });
                   }))
                   .then(results => {
-                    // console.log('Size variants updated/inserted:', results);
+                    // //console.log('Size variants updated/inserted:', results);
                   })
                   .catch(error => {
                     // console.error('Error updating/inserting size variants:', error);
@@ -561,7 +561,7 @@ class ProductController {
                   
             }
             else{
-                console.log("products not found");
+                //console.log("products not found");
                 const sizeVariantsData = Object.entries(pro_sizes).map(([size, quan]) => ({
                     size,
                     quan: quan ? parseInt(quan) : 0 ,// Convert quantity to number, handle empty string case,
@@ -569,7 +569,7 @@ class ProductController {
                   }));
                   product_size_variants.insertMany(sizeVariantsData)
                     .then(savedSizeVariants => {
-                        // console.log('Size variants inserted:', savedSizeVariants);
+                        // //console.log('Size variants inserted:', savedSizeVariants);
                     })
                     .catch(error => {
                         // console.error('Error inserting size variants:', error);
@@ -583,24 +583,24 @@ class ProductController {
     async productByCatSlug(req,res){
         const catSlug = req.query.category;
         const page = parseInt(req.headers.page_no) || 1;
-        // console.log('my-slug');
-        // console.log(catSlug);
+        // //console.log('my-slug');
+        // //console.log(catSlug);
         try{
           const getCategory = await this.category.findOne({slug:catSlug});
-        //   console.log(getCategory);
+        //   //console.log(getCategory);
           if(getCategory){
-            // console.log('here');
+            // //console.log('here');
               let catId = getCategory._id;
               const getProducts = await this.product
               .find({ category: catId })
               .populate('images')
               .populate('color')
               .populate('brand'); // <-- virtual populate
-            //   console.log(getProducts);
+            //   //console.log(getProducts);
               const itemsLength = getProducts.length;
-            //   console.log(itemsLength);
+            //   //console.log(itemsLength);
               if(getProducts){
-                //   console.log(getProducts);
+                //   //console.log(getProducts);
                   // const page = parseInt(req.query.page) || 1;
                 const limit = 3; // Number of products per page
                 const startIndex = (page - 1) * limit;
@@ -611,9 +611,9 @@ class ProductController {
                     return pro.size;
                 });
                 const flattenedSizes = sizes.flat();
-                // console.log("sizes");
-                // console.log(flattenedSizes);
-                // console.log("sizes");
+                // //console.log("sizes");
+                // //console.log(flattenedSizes);
+                // //console.log("sizes");
 
                 const uniqueSizes = [];
                 const seenSizes = new Set();
@@ -625,9 +625,9 @@ class ProductController {
                 }
                 }
 
-                console.log("sizes");
-                console.log(uniqueSizes);
-                console.log("sizes");
+                //console.log("sizes");
+                //console.log(uniqueSizes);
+                //console.log("sizes");
 
 
 
@@ -636,8 +636,8 @@ class ProductController {
                 });
                
 
-                // console.log("uniquecolors");
-                // console.log(colors);
+                // //console.log("uniquecolors");
+                // //console.log(colors);
                 const uniqueColors = [];
 
                 const colorsSeen = new Set();
@@ -650,10 +650,10 @@ class ProductController {
                 }
                 });
                 // 
-                // console.log("uniquecolors");
-                // console.log(uniqueColors);
+                // //console.log("uniquecolors");
+                // //console.log(uniqueColors);
 
-                // console.log("uniqueBrands");
+                // //console.log("uniqueBrands");
                 const brands = paginatedProducts.map((pro)=>{
                     return pro.brand;
                 });
@@ -680,7 +680,7 @@ class ProductController {
                     { $sort: { "size.price": 1 } },
                     { $limit: 1 }
                 ]);
-                // console.log(lowestPriceProduct);
+                // //console.log(lowestPriceProduct);
                 
                 const highestPriceProduct =  await this.product.aggregate([
                     { $unwind: "$size" },
@@ -694,17 +694,17 @@ class ProductController {
                     // { $limit: 1 }
                 ]);
 
-                // console.log(highestPriceProduct);
+                // //console.log(highestPriceProduct);
                 // return;
                 let highestPrice = 0;
                 let lowestPrice = 0;
-                // console.log('prices limitstart');
-                // console.log(highestPriceProduct[0].size);
+                // //console.log('prices limitstart');
+                // //console.log(highestPriceProduct[0].size);
                  highestPrice = highestPriceProduct[0].size.price;
-                // console.log(lowestPriceProduct[0].size);
+                // //console.log(lowestPriceProduct[0].size);
                  lowestPrice = lowestPriceProduct[0].size.price; 
-                // console.log('prices limitend');
-                // console.log("uniqueBrands");
+                // //console.log('prices limitend');
+                // //console.log("uniqueBrands");
                 res.status(200).json({ message: 'Product Found successfully', products: paginatedProducts ,currentPage: page, lowestPrice:lowestPrice, highestPrice:highestPrice, total_products:itemsLength,
                 colors:uniqueColors,
                 brands:uniqueBrands,
@@ -714,7 +714,7 @@ class ProductController {
           }
         }
         catch(error){
-          console.log(error);
+          //console.log(error);
         }
      
     }
@@ -821,19 +821,19 @@ class ProductController {
         const pro_id = (req.query.pro_id);
         const size_pro_find = await product_size_variants.find({product:pro_id});
         if(size_pro_find){
-            // console.log(size_pro_find);
+            // //console.log(size_pro_find);
             res.status(200).json(size_pro_find);
         }
     }
 
     async productImages(req,res){
-        //    console.log(req.file);
+        //    //console.log(req.file);
            if(req.file!=null){
                  
             let buffer_data = fs.readFileSync(req.file.path);
              let content_type = req.file.mimetype;
-            //  console.log(buffer_data);
-            //  console.log(content_type);
+            //  //console.log(buffer_data);
+            //  //console.log(content_type);
                updateData = {
               product: req.body.pro_id,
              'photo.data':buffer_data,
@@ -851,14 +851,14 @@ class ProductController {
     }
 
     async delProImages(req,res){
-        //  console.log(req.body);
+        //  //console.log(req.body);
          var pro_id = req.body.pro_id;
          var image_ids = req.body.image_ids;
-        //  console.log(pro_id);
-        //  console.log(image_ids);
+        //  //console.log(pro_id);
+        //  //console.log(image_ids);
          try{
          var deleted_images = await productImages.deleteMany({ _id:image_ids});
-        //  console.log(deleted_images);
+        //  //console.log(deleted_images);
          }
          catch(error){
             throw error;
@@ -866,9 +866,9 @@ class ProductController {
     }
     
     async getProductTitle(req,res){
-        // console.log(req.params.p_id);
+        // //console.log(req.params.p_id);
         const get_products = await product.findOne({_id:req.params.p_id});
-        // console.log(get_products);
+        // //console.log(get_products);
         if(get_products){
             return res.status(200).send({
                 success:true,
@@ -907,9 +907,9 @@ module.exports =  ProductController;
        
 // module.exports = {create_product,all_products,del_product,get_product,get_product_by_slug,update_product,product_by_cat_slug,filter_products,product_sizes,product_images,del_pro_images,get_product_title};
 
-    // console.log(cat_slug);
+    // //console.log(cat_slug);
     //   const get_categories = await category.findOne({slug:cat_slug});
     //   if(get_categories){
     //   // let cat_id = get_categories._id;
-    //   console.log(get_categories);
+    //   //console.log(get_categories);
     //   }
