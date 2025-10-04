@@ -157,7 +157,7 @@ class Server {
             secret: process.env.SESSION_SECRET, // use process.env.SESSION_SECRET in prod
             resave: false,
             saveUninitialized: true,
-            cookie: { secure: false }, // set secure:true if using https
+            cookie: { secure: true }, // set secure:true if using https
         })
         );
 
