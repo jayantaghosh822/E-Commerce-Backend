@@ -316,14 +316,15 @@ class CartController {
         });
       } else {
         // ✅ Guest user → session cart
+       
         const { productId, variationId } = req.body; // frontend must send these
-
+        // console.log(productId,variationId);
         if (!req.session.cart) req.session.cart = { items: [] };
-
+        //  console.log(req.session.cart);
         const beforeLength = req.session.cart.items.length;
-
+        
         req.session.cart.items = req.session.cart.items.filter(
-          i => !(i.product?.id === productId && i.variation?.id === variationId)
+          i => !(i.productId === productId && i.variationId === variationId)
         );
 
         if (req.session.cart.items.length === beforeLength) {
@@ -442,7 +443,7 @@ class CartController {
       // //console.log(req.session.cart);
       return res.status(201).json({
         success: true,
-        message: "Item added to guest cart (session)",
+        message: "Item added to cart",
         cart: req.session.cart,
       });
     }
