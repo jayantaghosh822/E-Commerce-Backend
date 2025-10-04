@@ -15,7 +15,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const corsOptions = {
-    origin: ["https://yourfrontend.com" , "http://localhost:3000"], // Allow only specific domains
+    origin: ["https://yourfrontend.com" , "http://localhost:3000" , "https://thriving-mandazi-2580ba.netlify.app/"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE,PATCH",
     credentials: true, 
     allowedHeaders: "Content-Type,Authorization",
