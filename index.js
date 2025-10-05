@@ -150,18 +150,21 @@ class Server {
 
         this.app.use(express.json());
 
-       
+        this.app.use(cors(corsOptions));
+
+        this.app.set('trust proxy', 1); // important when behind reverse proxy like Render
 
         this.app.use(
         session({
-            secret: process.env.SESSION_SECRET, // use process.env.SESSION_SECRET in prod
+            secret: process.env.SESSION_SECRET,
             resave: false,
-            saveUninitialized: true,
+            saveUninitialized: false,
+            proxy: true,
             cookie: {
-                secure: true,             // must be true on HTTPS (Render is HTTPS)
-                httpOnly: true,
-                sameSite: "none"          // allow cross-site cookie
-            }, // set secure:true if using https
+            secure: true,             // must be true on HTTPS (Render is HTTPS)
+            httpOnly: true,
+            sameSite: "none"          // allow cross-site cookie
+            }
         })
         );
 
@@ -173,7 +176,7 @@ class Server {
         //         return res.status(403).json({ message: "Forbidden: API access restricted." });
         //     }
         // });
-        this.app.use(cors(corsOptions));
+       
         this.app.use(cookieParser());
         this.connectDB();
         // this.middlewares();
