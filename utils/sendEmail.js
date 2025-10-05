@@ -6,7 +6,7 @@ class Mailer{
     this.transporter = nodemailer.createTransport({
         host: process.env.HOST,
         service: process.env.SERVICE,
-        port: 465,
+        port: 587,
         secure: true,
         auth: {
             user: process.env.EMAIL_USER,
