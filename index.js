@@ -162,7 +162,7 @@ class Server {
             proxy: true,
             cookie: {
             secure: true,             // must be true on HTTPS (Render is HTTPS)
-            httpOnly: true,
+            httpOnly: false,
             sameSite: "none"          // allow cross-site cookie
             }
         })
