@@ -8,6 +8,8 @@ const bcrypt = require('bcryptjs');
 const refreshTokenModel = require("../models/refreshTokenModel.js");
 const axios = require("axios");
 dotenv.config();
+const playwright = require('playwright');
+const { chromium } = require('playwright');
 
 class UserController {
     constructor() {
@@ -575,95 +577,78 @@ class UserController {
        
     }
 
-    async sendPasswordResetLink(req,res){
-        let origin = (req.headers.origin);
-        
-      
-        const userEmail = req.body.vemail;
-        let userx="";
-        
-        if(userEmail!=""){
-        
-        try{
-      
-            userx =  await this.user.findOne({ email: userEmail }); 
-            if(userx){
-                
-                let reset_token = await this.token.findOne({ userId: userx._id });
-                    if (!reset_token) {
-                    reset_token = await new this.token({
-                            userId: userx._id,
-                            token: crypto.randomBytes(32).toString("hex"),
-                        }).save();
-                    }
-                // console.log(process.env.BASE_URL);
-                if(origin == undefined){
-                    origin = process.env.MAIL_SEND_BASE_URL
-                }
-                const link = `${origin}/password-reset/${userx._id}/${reset_token.token}`;
-                console.log(userEmail);
-                console.log(link);
-               
+  async sendPasswordResetLink(req, res) {
+    const origin = req.headers.origin || process.env.MAIL_SEND_BASE_URL;
+    const userEmail = req.body.vemail;
 
-                // 🔹 Send POST request to your PHP endpoint
-                const response = await axios.post(
-                    "https://argha-email-provider.ct.ws/mail-services/send-email.php",
-                    {
-                        to: userEmail,
-                        subject: "Password Reset",
-                        message: `Click the link to reset your password: ${link}`,
-                    },
-                    {
-                        headers: { "Content-Type": "application/json" },
-                        timeout: 10000,
-                    }
-                );
-
-                console.log("MAIL RESPONSE:", response.data);
-
-
-                const mailStatus = await sendEmail.sendEmail(userEmail, "Password reset", link);
-                if(mailStatus.status=='sent'){
-                    res.status(201).send({
-                        success:true,
-                        User:"Verified",
-                        message:"Password reset link sent to your email account",
-                    })
-                }else{
-                    res.status(500).send({
-                        success:false,
-                        User:"Verified",
-                        message:"Something Went Wrong",
-                    })
-                }
-                
-            }
-            else{
-                res.status(404).send({
-                success:false,
-                message:"Not Registered User",
-                
-            })
-            }
-      
-        }
-        catch(error){
-          console.log(error);
-          res.status(201).send({
-             
-            message:"Something Went Wrong",
-           
-        })
-        }
-       
-      }else{
-        res.status(401).send({
-            success:false,
-            message:'empty email'
-        })
-      }
-        
+    if (!userEmail) {
+        return res.status(401).send({
+            success: false,
+            message: "Empty email",
+        });
     }
+
+    try {
+        // Find user
+        const userx = await this.user.findOne({ email: userEmail });
+        if (!userx) {
+            return res.status(404).send({
+                success: false,
+                message: "Not registered user",
+            });
+        }
+
+        // Find or create token
+        let reset_token = await this.token.findOne({ userId: userx._id });
+        if (!reset_token) {
+            reset_token = await new this.token({
+                userId: userx._id,
+                token: crypto.randomBytes(32).toString("hex"),
+            }).save();
+        }
+
+        // Build password reset link
+        const link = `${origin}/password-reset/${userx._id}/${reset_token.token}`;
+        console.log(userEmail);
+        console.log(link);
+
+        // Build email
+        const subject = "Password Reset";
+        const message = `Click the link to reset your password: ${link}`;
+        const url =
+            `https://php-37c5a.wasmer.app/send-email.php` +
+            `?vemail=${encodeURIComponent(userEmail)}` +
+            `&subject=${encodeURIComponent(subject)}` +
+            `&message=${encodeURIComponent(message)}`;
+
+        // Send email
+        const response = await axios.get(url, { timeout: 15000 });
+        console.log("✅ MAIL RESPONSE:", response.data);
+
+        if (response.data.success) {
+            return res.status(201).send({
+                success: true,
+                User: "Verified",
+                message: "Password reset link sent to your email account",
+            });
+        } else {
+            return res.status(500).send({
+                success: false,
+                User: "Verified",
+                message: "Failed to send password reset email",
+                details: response.data,
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({
+            success: false,
+            message: "Something went wrong",
+            error: error.message,
+        });
+    }
+    }
+
 
     // async sendPasswordResetLink(req,res){
     //     console.log(req.body.email);
