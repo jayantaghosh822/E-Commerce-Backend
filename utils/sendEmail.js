@@ -15,20 +15,26 @@ class Mailer{
     });
     this.sendEmail = this.sendEmail.bind(this);
  }
-    async sendEmail(email, subject, text) {
+    async sendEmail(email, subject, text){
         try {
             await this.transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject,
-            text,
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: subject,
+                text: text,
             });
-            return { status: 'sent' };
+
+            // console.log("email sent sucessfully");
+            return {
+                status:'sent'
+            }
         } catch (error) {
-            console.error("MAIL ERROR:", error.message || error);
-            return { status: 'mail failed', error: error.message };
+            console.log(error, "email not sent");
+            return {
+                status:'mail failed'
+            }
         }
-    }
+    };
 }
 
 
