@@ -577,18 +577,18 @@ class UserController {
 
     async sendPasswordResetLink(req,res){
         let origin = (req.headers.origin);
-        // console.log(req.headers.host);
+        
       
         const userEmail = req.body.vemail;
         let userx="";
-        // console.log(user_email);
+        
         if(userEmail!=""){
         
         try{
       
             userx =  await this.user.findOne({ email: userEmail }); 
             if(userx){
-                // console.log(userx);
+                
                 let reset_token = await this.token.findOne({ userId: userx._id });
                     if (!reset_token) {
                     reset_token = await new this.token({
@@ -601,6 +601,9 @@ class UserController {
                     origin = process.env.MAIL_SEND_BASE_URL
                 }
                 const link = `${origin}/password-reset/${userx._id}/${reset_token.token}`;
+                console.log(userEmail);
+                console.log(link);
+               
                 const mailStatus = await sendEmail.sendEmail(userEmail, "Password reset", link);
                 if(mailStatus.status=='sent'){
                     res.status(201).send({
