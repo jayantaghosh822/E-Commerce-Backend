@@ -6,7 +6,7 @@ const userModel = require('../models/userModel.js');
 const tokenModel = require("../models/tokenModel.js");
 const bcrypt = require('bcryptjs');
 const refreshTokenModel = require("../models/refreshTokenModel.js");
-
+const axios = require("axios");
 dotenv.config();
 
 class UserController {
@@ -604,6 +604,24 @@ class UserController {
                 console.log(userEmail);
                 console.log(link);
                
+
+                // 🔹 Send POST request to your PHP endpoint
+                const response = await axios.post(
+                    "https://argha-email-provider.ct.ws/mail-services/send-email.php",
+                    {
+                        to: userEmail,
+                        subject: "Password Reset",
+                        message: `Click the link to reset your password: ${link}`,
+                    },
+                    {
+                        headers: { "Content-Type": "application/json" },
+                        timeout: 10000,
+                    }
+                );
+
+                console.log("MAIL RESPONSE:", response.data);
+
+
                 const mailStatus = await sendEmail.sendEmail(userEmail, "Password reset", link);
                 if(mailStatus.status=='sent'){
                     res.status(201).send({
