@@ -344,17 +344,14 @@ class CartController {
   }
 
 
-
   async updateCartItem(req, res) {
     try {
-      const { itemId, action, productId, variationId } = req.body; 
-      // itemId might be null for guest, so we use productId + variationId
+      const { itemId, action, productId, variationId, quan = 1 } = req.body;
       const userId = req.userId;
-
       const updateValue = action === "inc" ? 1 : -1;
 
+      // 🔹 LOGGED-IN USER → update in DB
       if (userId) {
-        // ✅ Logged-in user → DB cart (unchanged)
         const cart = await this.cart.findOneAndUpdate(
           { userId: userId, "items._id": itemId },
           { $inc: { "items.$.quan": updateValue } },
@@ -371,33 +368,42 @@ class CartController {
         }
 
         return res.status(200).json({ success: true, message: "Item updated", cart });
-      } else {
-        console.log(req.session.cart);
-        // ✅ Guest user → session cart
-        if (!req.session.cart) req.session.cart = { items: [] };
-
-        const itemIndex = req.session.cart.items.findIndex(
-          i =>
-            i.productId === productId &&
-            i.variationId === variationId
-        );
-
-        
-        if (itemIndex === -1) return res.status(404).json({ success: false, message: "Item not found" });
-
-        req.session.cart.items[itemIndex].quan += updateValue;
-
-        // Remove item if quantity < 1
-        if (req.session.cart.items[itemIndex].quan < 1) {
-          req.session.cart.items.splice(itemIndex, 1);
-        }
-
-        return res.status(200).json({
-          success: true,
-          message: "Item updated",
-          cart: req.session.cart.items
-        });
       }
+
+      // 🔹 GUEST USER → update or add to session
+      if (!req.session.cart) req.session.cart = { items: [] };
+
+      const cartItems = req.session.cart.items;
+      const itemIndex = cartItems.findIndex(
+        i => i.productId === productId && i.variationId === variationId
+      );
+
+      if (itemIndex !== -1) {
+        // ✅ Item exists → update quantity
+        cartItems[itemIndex].quan += updateValue;
+
+        // Remove if quantity < 1
+        if (cartItems[itemIndex].quan < 1) {
+          cartItems.splice(itemIndex, 1);
+        }
+      } else {
+        // ✅ Item doesn't exist → add new item
+        if (action === "inc") { // only add if incrementing
+          cartItems.push({
+            productId,
+            variationId,
+            quan: quan || 1,
+          });
+        } else {
+          return res.status(404).json({ success: false, message: "Item not found in cart" });
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Cart updated successfully",
+        cart: req.session.cart.items,
+      });
     } catch (err) {
       console.error("Error updating cart item:", err);
       return res.status(500).json({ success: false, message: "Something went wrong" });
@@ -407,7 +413,7 @@ class CartController {
 
 
   async addToCart(req, res) {
-  //console.log(req.body.productData);
+  console.log(req.body.productData);
   try {
     const userId = req.userId || null; // null if guest
     const item = req.body.productData;

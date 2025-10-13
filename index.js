@@ -154,6 +154,21 @@ class Server {
 
         this.app.set('trust proxy', 1); // important when behind reverse proxy like Render
 
+        const isProduction = process.env.NODE_ENV === "production";
+        // this.app.use(
+        // session({
+        //     secret: process.env.SESSION_SECRET,
+        //     resave: false,
+        //     saveUninitialized: false,
+        //     proxy: true,
+        //     cookie: {
+        //     secure: true,             // must be true on HTTPS (Render is HTTPS)
+        //     httpOnly: false,
+        //     sameSite: "none"          // allow cross-site cookie
+        //     }
+        // })
+        // );
+
         this.app.use(
         session({
             secret: process.env.SESSION_SECRET,
@@ -161,12 +176,13 @@ class Server {
             saveUninitialized: false,
             proxy: true,
             cookie: {
-            secure: true,             // must be true on HTTPS (Render is HTTPS)
+            secure: false,     // ❌ no HTTPS on localhost
             httpOnly: false,
-            sameSite: "none"          // allow cross-site cookie
-            }
+            sameSite: "lax",   // or "none" if you're using different ports/domains
+            },
         })
         );
+
 
         this.app.use(express.urlencoded({ extended: true }));
         this.port = 5000;
