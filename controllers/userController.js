@@ -540,12 +540,12 @@ class UserController {
             res.clearCookie("accessToken", {
                 httpOnly: true,
                 secure: true,
-                sameSite: "None",
+                // sameSite: "None",
             });
             res.clearCookie("refreshToken", {
                 httpOnly: true,
                 secure: true,
-                sameSite: "None",
+                // sameSite: "None",
             });
             res.status(200).json({ message: "Logged out" });
         }catch(err){
