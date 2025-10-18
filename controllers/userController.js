@@ -616,7 +616,7 @@ class UserController {
         const subject = "Password Reset";
         const message = `Click the link to reset your password: ${link}`;
         const url =
-            `https://php-37c5a.wasmer.app/send-email.php` +
+            `https://argha-test.liveblog365.com/mail-services/send-email.php` +
             `?vemail=${encodeURIComponent(userEmail)}` +
             `&subject=${encodeURIComponent(subject)}` +
             `&message=${encodeURIComponent(message)}`;
