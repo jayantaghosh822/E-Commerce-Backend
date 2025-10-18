@@ -541,11 +541,13 @@ class UserController {
                 httpOnly: true,
                 secure: true,
                 sameSite: "None",
+                domain: "e-commerce-backend-shdg.onrender.com"
             });
             res.clearCookie("refreshToken", {
                 httpOnly: true,
                 secure: true,
                 sameSite: "None",
+                domain: "e-commerce-backend-shdg.onrender.com"
             });
             res.status(200).json({ message: "Logged out" });
         }catch(err){
