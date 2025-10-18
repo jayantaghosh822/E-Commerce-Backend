@@ -247,15 +247,15 @@ class UserController {
 
 
                         res.cookie("accessToken", accessToken, {
-                        // httpOnly: true,     // Can't be accessed by JS 👈
-                        // secure: true,       // Only sent over HTTPS (use false in local dev)
+                        httpOnly: true,     // Can't be accessed by JS 👈
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
                         // sameSite: "None",    // Or "None" if cross-site, but then also use secure: true
                         maxAge: 15 * 60 * 1000, // 15 mins
                         });
 
                         res.cookie("refreshToken", refreshToken, {
-                        // httpOnly: true,     // Can't be accessed by JS 👈
-                        // secure: true,       // Only sent over HTTPS (use false in local dev)
+                        httpOnly: true,     // Can't be accessed by JS 👈
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
                         // sameSite: "None",    // Or "None" if cross-site, but then also use secure: true
                         maxAge: 7 * 24 * 60 * 60 * 1000, // 1 day
                         });
@@ -430,7 +430,7 @@ class UserController {
 
                         res.cookie("accessToken", accessToken, {
                         httpOnly: true,     // Can't be accessed by JS 👈
-                        // secure: true,       // Only sent over HTTPS (use false in local dev)
+                        secure: true,       // Only sent over HTTPS (use false in local dev)
                         sameSite: "None",    // Or "None" if cross-site, but then also use secure: true
                         maxAge: 15 * 60 * 1000, // 15 mins
                         });
@@ -438,7 +438,7 @@ class UserController {
                         res.cookie("refreshToken", refreshToken, {
                         httpOnly: true,     // Can't be accessed by JS 👈
                         secure: true,       // Only sent over HTTPS (use false in local dev)
-                        // sameSite: "None",    // Or "None" if cross-site, but then also use secure: true
+                        sameSite: "None",    // Or "None" if cross-site, but then also use secure: true
                         maxAge: 7 * 24 * 60 * 60 * 1000, // 1 day
                         });
                             res.status(200).send({
