@@ -155,6 +155,7 @@ class Server {
         this.app.set('trust proxy', 1); // important when behind reverse proxy like Render
 
         const isProduction = process.env.NODE_ENV === "production";
+        ///for dev use this
         // this.app.use(
         // session({
         //     secret: process.env.SESSION_SECRET,
@@ -168,7 +169,10 @@ class Server {
         //     }
         // })
         // );
+        ///for dev use this
 
+
+        ///for live use this
         this.app.use(
         session({
             secret: process.env.SESSION_SECRET,
@@ -182,7 +186,7 @@ class Server {
             },
         })
         );
-
+        ///for live use this
 
         this.app.use(express.urlencoded({ extended: true }));
         this.port = 5000;
