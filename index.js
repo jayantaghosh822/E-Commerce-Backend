@@ -157,7 +157,7 @@ class Server {
         const isProduction = process.env.NODE_ENV === "production";
 
         //For Live
-        this.app.set("trust proxy", 1); // <– required when using secure cookies behind a proxy
+        // this.app.set("trust proxy", 1); // <– required when using secure cookies behind a proxy
 
         // this.app.use(
         // session({
