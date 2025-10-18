@@ -168,7 +168,7 @@ class Server {
             cookie: {
             secure: true,        // true for HTTPS
             httpOnly: true,     // false only if you need JS to read cookie (not recommended)
-            // sameSite: "none",    // required for cross-site cookies
+            sameSite: "none",    // required for cross-site cookies
             maxAge: 1000 * 60 * 60 * 24 * 7 // optional (1 week)
             }
         })
