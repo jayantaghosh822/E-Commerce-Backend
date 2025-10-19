@@ -157,22 +157,44 @@ class Server {
         const isProduction = process.env.NODE_ENV === "production";
 
         //For Live
-        this.app.set("trust proxy", 1); // <– required when using secure cookies behind a proxy
+        // this.app.set("trust proxy", 1); // <– required when using secure cookies behind a proxy
 
-        this.app.use(
+        // this.app.use(
+        // session({
+        //     secret: process.env.SESSION_SECRET,
+        //     resave: false,
+        //     saveUninitialized: false,
+        //     proxy: true,
+        //     cookie: {
+        //     secure: true,        // true for HTTPS
+        //     httpOnly: true,     // false only if you need JS to read cookie (not recommended)
+        //     sameSite: "none",    // required for cross-site cookies
+        //     maxAge: 1000 * 60 * 60 * 24 * 7 // optional (1 week)
+        //     }
+        // })
+        // );
+
+        const session = require('express-session');
+        const MongoStore = require('connect-mongo');
+
+        app.use(
         session({
             secret: process.env.SESSION_SECRET,
             resave: false,
             saveUninitialized: false,
-            proxy: true,
+            store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI, // e.g. MongoDB Atlas connection string
+            collectionName: 'sessions',
+            }),
             cookie: {
-            secure: true,        // true for HTTPS
-            httpOnly: true,     // false only if you need JS to read cookie (not recommended)
-            sameSite: "none",    // required for cross-site cookies
-            maxAge: 1000 * 60 * 60 * 24 * 7 // optional (1 week)
-            }
+            secure: true, // because you're on HTTPS (Vercel)
+            sameSite: 'none', // important for cross-origin (React localhost → Vercel)
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+            },
         })
         );
+
 
 
         //For Dev
