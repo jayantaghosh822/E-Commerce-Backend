@@ -59,44 +59,44 @@ class UserController {
                 }).save();
                 
                 const link = `${origin}/verify-email/${reset_token.token}`;
-                // const mailStatus = await sendEmail.sendEmail(newUser.email, "Password reset", link);
-                // if(mailStatus.status=='sent'){
-                //     return res.status(201).json({
-                //         success: true,
-                //         message: "Email Verification link sent to your email account",
-                //         newUser,
-                //     });
-                // }
-
-                let response = await this.sendMail(userEmail,subject,message);
-        
-                let responseJson = '';
-                try {
-                    responseJson = JSON.parse(response.replace(/<[^>]*>?/gm, '').trim());
-                    console.log("✅ MAIL RESPONSE:", responseJson);
-                    if (response.success) {
-                            return res.status(201).send({
-                                success: true,
-                                message: "Email Verification link sent to your email account",
-                                newUser
-                            });
-                        } else {
-                            return res.status(500).send({
-                                success: false,
-                                User: "Verified",
-                                message: "Failed to send password reset email",
-                                details: response.message,
-                            });
-                        }
-                } catch {
-                    console.log("📜 Raw Response:", response);
-                    return res.status(500).send({
-                        success: false,
-                        User: "Verified",
-                        message: "Failed to send password reset email",
-                        details: response.message,
+                const mailStatus = await sendEmail.sendEmail(newUser.email, "Password reset", link);
+                if(mailStatus.status=='sent'){
+                    return res.status(201).json({
+                        success: true,
+                        message: "Email Verification link sent to your email account",
+                        newUser,
                     });
                 }
+
+                // let response = await this.sendMail(userEmail,subject,message);
+        
+                // let responseJson = '';
+                // try {
+                //     responseJson = JSON.parse(response.replace(/<[^>]*>?/gm, '').trim());
+                //     console.log("✅ MAIL RESPONSE:", responseJson);
+                //     if (response.success) {
+                //             return res.status(201).send({
+                //                 success: true,
+                //                 message: "Email Verification link sent to your email account",
+                //                 newUser
+                //             });
+                //         } else {
+                //             return res.status(500).send({
+                //                 success: false,
+                //                 User: "Verified",
+                //                 message: "Failed to send password reset email",
+                //                 details: response.message,
+                //             });
+                //         }
+                // } catch {
+                //     console.log("📜 Raw Response:", response);
+                //     return res.status(500).send({
+                //         success: false,
+                //         User: "Verified",
+                //         message: "Failed to send password reset email",
+                //         details: response.message,
+                //     });
+                // }
                 
             } else {
                 return res.status(200).json({
@@ -679,8 +679,15 @@ class UserController {
         if(mailStatus.status=='sent'){
             return res.status(201).json({
                 success: true,
-                message: "Email Verification link sent to your email account",
+                User: "Verified",
+                message: "Password reset link sent to your email account",
                 // newUser,
+            });
+        }else{
+            return res.status(500).send({
+                success: false,
+                User: "Verified",
+                message: "Failed to send password reset email",
             });
         }
         
