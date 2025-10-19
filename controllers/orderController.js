@@ -92,7 +92,7 @@ class OrderController {
                 return res.status(400).json({ message: 'Missing payment info' });
             }
              if(paymentMethod == 'stripe'){
-                const striprPaymentCreation = await this.stripePayment(cartItems,userId,shippingAddress);
+                const striprPaymentCreation = await this.stripePayment(req,cartItems,userId,shippingAddress);
                 // ////console.log(striprPaymentCreation,userId);
                 if(striprPaymentCreation.stripeSessionStatus){
                     return res.status(201).json({ paymentUrl:striprPaymentCreation.paymentUrl,paymentMethod : paymentMethod });
@@ -137,7 +137,7 @@ class OrderController {
 
 
 
-    async stripePayment(cartItems,userId,shippingAddress){
+    async stripePayment(req,cartItems,userId,shippingAddress){
         // ////console.log(userId);
         const user = await this.user.findById(userId);
         ////console.log("user",user);
