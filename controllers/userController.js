@@ -759,8 +759,9 @@ class UserController {
                 success:false,
                 message:'Empty Token'
             });
-    
-            userX.password = req.body.vpass;
+            const salt = await bcrypt.genSalt(10);
+            const saltedpassword = await bcrypt.hash(req.body.vpass, salt);
+            userX.password = saltedpassword;
             await userX.save();
             await find_token.deleteOne();
     
