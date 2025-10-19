@@ -2,8 +2,11 @@
   "name": "gym-app",
   "version": "1.0.0",
   "main": "index.js",
+  "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "postinstall": "npx playwright install chromium --with-deps"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +36,5 @@
   "bugs": {
     "url": "https://github.com/jayantaghosh822/E-Commerce-Backend/issues"
   },
-  "homepage": "https://github.com/jayantaghosh822/E-Commerce-Backend#readme",
-  "description": ""
+  "homepage": "https://github.com/jayantaghosh822/E-Commerce-Backend#readme"
 }
