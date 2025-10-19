@@ -628,6 +628,14 @@ class UserController {
             });
         }
 
+        if(userx.auth_provider=='google'){
+            return res.status(404).send({
+                success: false,
+                User: "Verified",
+                message: "This account uses Google Sign-In. Please log in with Google.",
+            });
+        }
+
         // Find or create token
         let reset_token = await this.token.findOne({ userId: userx._id });
         if (!reset_token) {
