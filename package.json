@@ -5,8 +5,7 @@
   "description": "",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "postinstall": "npx playwright install chromium"
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",

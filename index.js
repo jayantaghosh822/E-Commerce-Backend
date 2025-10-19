@@ -14,7 +14,6 @@ const variations = variationModel.ProductVariation;
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const serverless = require("serverless-http");
 const corsOptions = {
     origin: ["https://yourfrontend.com" , "http://localhost:3000" , "https://thriving-mandazi-2580ba.netlify.app"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE,PATCH",
@@ -266,12 +265,3 @@ class Server {
 // Initialize the server
 // console.log('jhgj');
 const serverStart = new Server();
-const app = serverStart.app;
-
-// Add Netlify route wrapper
-app.get("/", (req, res) => {
-  res.send("✅ App is running on Netlify or local");
-});
-
-// export for Netlify
-module.exports.handler = serverless(app);
