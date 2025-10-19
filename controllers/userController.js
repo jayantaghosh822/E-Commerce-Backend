@@ -59,12 +59,42 @@ class UserController {
                 }).save();
                 
                 const link = `${origin}/verify-email/${reset_token.token}`;
-                const mailStatus = await sendEmail.sendEmail(newUser.email, "Password reset", link);
-                if(mailStatus.status=='sent'){
-                    return res.status(201).json({
-                        success: true,
-                        message: "Email Verification link sent to your email account",
-                        newUser,
+                // const mailStatus = await sendEmail.sendEmail(newUser.email, "Password reset", link);
+                // if(mailStatus.status=='sent'){
+                //     return res.status(201).json({
+                //         success: true,
+                //         message: "Email Verification link sent to your email account",
+                //         newUser,
+                //     });
+                // }
+
+                let response = await this.sendMail(userEmail,subject,message);
+        
+                let responseJson = '';
+                try {
+                    responseJson = JSON.parse(response.replace(/<[^>]*>?/gm, '').trim());
+                    console.log("✅ MAIL RESPONSE:", responseJson);
+                    if (response.success) {
+                            return res.status(201).send({
+                                success: true,
+                                message: "Email Verification link sent to your email account",
+                                newUser
+                            });
+                        } else {
+                            return res.status(500).send({
+                                success: false,
+                                User: "Verified",
+                                message: "Failed to send password reset email",
+                                details: response.message,
+                            });
+                        }
+                } catch {
+                    console.log("📜 Raw Response:", response);
+                    return res.status(500).send({
+                        success: false,
+                        User: "Verified",
+                        message: "Failed to send password reset email",
+                        details: response.message,
                     });
                 }
                 
@@ -577,7 +607,7 @@ class UserController {
        
     }
 
-  async sendPasswordResetLink(req, res) {
+    async sendPasswordResetLink(req, res) {
     const origin = req.headers.origin || process.env.MAIL_SEND_BASE_URL;
     const userEmail = req.body.vemail;
 
@@ -615,30 +645,36 @@ class UserController {
         // Build email
         const subject = "Password Reset";
         const message = `Click the link to reset your password: ${link}`;
-        const url =
-            `https://argha-test.liveblog365.com/mail-services/send-email.php` +
-            `?vemail=${encodeURIComponent(userEmail)}` +
-            `&subject=${encodeURIComponent(subject)}` +
-            `&message=${encodeURIComponent(message)}`;
-
-        // Send email
-        const response = await axios.get(url, { timeout: 15000 });
-        console.log("✅ MAIL RESPONSE:", response.data);
-
-        if (response.data.success) {
-            return res.status(201).send({
-                success: true,
-                User: "Verified",
-                message: "Password reset link sent to your email account",
-            });
-        } else {
+        let response = await this.sendMail(userEmail,subject,message);
+        
+        let responseJson = '';
+        try {
+            responseJson = JSON.parse(response.replace(/<[^>]*>?/gm, '').trim());
+            console.log("✅ MAIL RESPONSE:", responseJson);
+            if (response.success) {
+                    return res.status(201).send({
+                        success: true,
+                        User: "Verified",
+                        message: "Password reset link sent to your email account",
+                    });
+                } else {
+                    return res.status(500).send({
+                        success: false,
+                        User: "Verified",
+                        message: "Failed to send password reset email",
+                        details: response.message,
+                    });
+                }
+        } catch {
+            console.log("📜 Raw Response:", response);
             return res.status(500).send({
                 success: false,
                 User: "Verified",
                 message: "Failed to send password reset email",
-                details: response.data,
+                details: response.message,
             });
         }
+        
     } catch (error) {
         console.error(error);
         return res.status(500).send({
@@ -649,7 +685,35 @@ class UserController {
     }
     }
 
+    async sendMail(userEmail,subject,message){
+        const url =
+        `https://argha-test.liveblog365.com/argha.php` +
+        `?vemail=${encodeURIComponent(userEmail)}` +
+        `&subject=${encodeURIComponent(subject)}` +
+        `&message=${encodeURIComponent(message)}`;
+        const browser = await playwright.chromium.launch({ headless: true });
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        let response = '';
 
+        try {
+            // Let Playwright solve Cloudflare and load final content
+            await page.goto(url, { waitUntil: 'networkidle' });
+
+            // Wait a short moment to ensure PHP output renders
+            await page.waitForTimeout(1000);
+
+            // ✅ Get the full HTML response body
+            const html = await page.content();
+            return html;
+           
+        } catch (err) {
+            console.error("❌ Error sending email:", err.message);
+            return err.message;
+            } finally {
+            await browser.close();
+        }
+    }
     // async sendPasswordResetLink(req,res){
     //     console.log(req.body.email);
     // }
