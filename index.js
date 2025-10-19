@@ -13,7 +13,8 @@ const variationModel = require('./models/productVariationModel.js');
 const variations = variationModel.ProductVariation;
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const session = require("express-session");
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const corsOptions = {
     origin: ["https://yourfrontend.com" , "http://localhost:3000" , "https://thriving-mandazi-2580ba.netlify.app"], // Allow only specific domains
     methods: "GET,POST,PUT,DELETE,PATCH",
@@ -174,16 +175,15 @@ class Server {
         // })
         // );
 
-        const session = require('express-session');
-        const MongoStore = require('connect-mongo');
+        
 
-        app.use(
+        this.app.use(
         session({
             secret: process.env.SESSION_SECRET,
             resave: false,
             saveUninitialized: false,
             store: MongoStore.create({
-            mongoUrl: process.env.MONGO_URI, // e.g. MongoDB Atlas connection string
+            mongoUrl: process.env.MONGODB_URI, // e.g. MongoDB Atlas connection string
             collectionName: 'sessions',
             }),
             cookie: {
