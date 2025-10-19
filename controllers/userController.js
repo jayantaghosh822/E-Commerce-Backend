@@ -639,39 +639,48 @@ class UserController {
 
         // Build password reset link
         const link = `${origin}/password-reset/${userx._id}/${reset_token.token}`;
-        console.log(userEmail);
-        console.log(link);
+        // console.log(userEmail);
+        // console.log(link);
 
-        // Build email
-        const subject = "Password Reset";
-        const message = `Click the link to reset your password: ${link}`;
-        let response = await this.sendMail(userEmail,subject,message);
+        // // Build email
+        // const subject = "Password Reset";
+        // const message = `Click the link to reset your password: ${link}`;
+        // let response = await this.sendMail(userEmail,subject,message);
         
-        let responseJson = '';
-        try {
-            responseJson = JSON.parse(response.replace(/<[^>]*>?/gm, '').trim());
-            console.log("✅ MAIL RESPONSE:", responseJson);
-            if (response.success) {
-                    return res.status(201).send({
-                        success: true,
-                        User: "Verified",
-                        message: "Password reset link sent to your email account",
-                    });
-                } else {
-                    return res.status(500).send({
-                        success: false,
-                        User: "Verified",
-                        message: "Failed to send password reset email",
-                        details: response.message,
-                    });
-                }
-        } catch {
-            console.log("📜 Raw Response:", response);
-            return res.status(500).send({
-                success: false,
-                User: "Verified",
-                message: "Failed to send password reset email",
-                details: response.message,
+        // let responseJson = '';
+        // try {
+        //     responseJson = JSON.parse(response.replace(/<[^>]*>?/gm, '').trim());
+        //     console.log("✅ MAIL RESPONSE:", responseJson);
+        //     if (response.success) {
+        //             return res.status(201).send({
+        //                 success: true,
+        //                 User: "Verified",
+        //                 message: "Password reset link sent to your email account",
+        //             });
+        //         } else {
+        //             return res.status(500).send({
+        //                 success: false,
+        //                 User: "Verified",
+        //                 message: "Failed to send password reset email",
+        //                 details: response.message,
+        //             });
+        //         }
+        // } catch {
+        //     console.log("📜 Raw Response:", response);
+        //     return res.status(500).send({
+        //         success: false,
+        //         User: "Verified",
+        //         message: "Failed to send password reset email",
+        //         details: response.message,
+        //     });
+        // }
+
+        const mailStatus = await sendEmail.sendEmail(userEmail, "Password reset", link);
+        if(mailStatus.status=='sent'){
+            return res.status(201).json({
+                success: true,
+                message: "Email Verification link sent to your email account",
+                // newUser,
             });
         }
         
