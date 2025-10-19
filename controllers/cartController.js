@@ -514,6 +514,7 @@ class CartController {
       // 🔹 Session items (guest cart)
       const sessionItems = req.session.cart?.items || [];
 
+      console.log(req.session);
       if (sessionItems.length > 0) {
         if (!dbCart) {
           // No DB cart → create with session items
