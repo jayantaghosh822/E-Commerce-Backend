@@ -30,7 +30,7 @@ class Server {
 
         this.app.post('/api/payment-status-webhook', express.raw({ type: 'application/json' }),async(request,res)=>{
             const sig = request.headers['stripe-signature'];
-            const endpointSecret = "whsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f";
+            const endpointSecret = "whsec_2PuLpd8xOBWN7Vfltfhp2rSber2n5l1f";
             // 1mwhsec_7e2d8f6798f66b5eb6e64f0d5167f003565e5364166e5e7542732271c2897c4f
             let event;
             

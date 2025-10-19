@@ -166,7 +166,7 @@ class OrderController {
                 },
                 quantity: item.quan
             }));
-            const client = process.env.CLIENT_URL;
+            const client = (req.headers.origin);
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ["card"],
                 line_items: lineitems,
